@@ -285,6 +285,7 @@ public struct ChangeMessageInfo: Codable, Identifiable {
     let message: String
     let tag: String?
     let revisionNumber: Int?
+    var attributedMessage: AttributedString?  // for a post-processed comment
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -294,6 +295,7 @@ public struct ChangeMessageInfo: Codable, Identifiable {
         case message
         case tag
         case revisionNumber = "_revision_number"
+        case attributedMessage
     }
 }
 
@@ -566,6 +568,30 @@ public func decodeGerritChangeListResponse(from jsonString: String) throws -> [G
     return changes
 }
 
+extension String {
+    func toDetectedAttributedString() -> AttributedString {
+        var attributedString = AttributedString(self)
+
+        let types = NSTextCheckingResult.CheckingType.link.rawValue
+
+        guard let detector = try? NSDataDetector(types: types) else {
+            return attributedString
+        }
+
+        let matches = detector.matches(in: self, options: [], range: NSRange(location: 0, length: count))
+
+        for match in matches {
+            let range = match.range
+            let startIndex = attributedString.index(attributedString.startIndex, offsetByCharacters: range.lowerBound)
+            let endIndex = attributedString.index(startIndex, offsetByCharacters: range.length)
+            if match.resultType == .link, let url = match.url {
+                attributedString[startIndex..<endIndex].link = url
+            }
+        }
+        return attributedString
+    }
+}
+
 public func decodeGerritSingleChangeResponse(from jsonString: String) throws -> GerritChange? {
     // To prevent against Cross Site Script Inclusion (XSSI) attacks, the JSON
     // response body starts with a magic prefix line that must be stripped before
@@ -581,9 +607,16 @@ public func decodeGerritSingleChangeResponse(from jsonString: String) throws -> 
     dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSSSSS"
     dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
     decoder.dateDecodingStrategy = .formatted(dateFormatter)
-    
-    let changes = try decoder.decode(GerritChange.self, from: jsonData)
-    return changes
+
+    var change = try decoder.decode(GerritChange.self, from: jsonData)
+
+    if change.messages != nil {
+        for message in change.messages!.indices {
+            change.messages![message].attributedMessage = change.messages![message].message.toDetectedAttributedString()
+        }
+    }
+
+    return change
 }
 
 @ViewBuilder func requirementIcon(status: SubmitRequirementResultStatus) -> some View {

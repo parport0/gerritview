@@ -66,30 +66,6 @@ struct CommitFilesListView: View {
     }
 }
 
-extension String {
-    func toDetectedAttributedString() -> AttributedString {
-        var attributedString = AttributedString(self)
-        
-        let types = NSTextCheckingResult.CheckingType.link.rawValue
-        
-        guard let detector = try? NSDataDetector(types: types) else {
-            return attributedString
-        }
-
-        let matches = detector.matches(in: self, options: [], range: NSRange(location: 0, length: count))
-        
-        for match in matches {
-            let range = match.range
-            let startIndex = attributedString.index(attributedString.startIndex, offsetByCharacters: range.lowerBound)
-            let endIndex = attributedString.index(startIndex, offsetByCharacters: range.length)
-            if match.resultType == .link, let url = match.url {
-                attributedString[startIndex..<endIndex].link = url
-            }
-        }
-        return attributedString
-    }
-}
-
 
 struct CommitCommentsListView: View {
     let comments: [ChangeMessageInfo]?
@@ -103,7 +79,7 @@ struct CommitCommentsListView: View {
                             Text(message.date.formatted()).font(.footnote)
                             Text(message.author!.Name()).font(.footnote)
                         }.padding(.bottom)
-                        Text(message.message.toDetectedAttributedString()).font(.subheadline)
+                        Text(message.attributedMessage!).font(.subheadline)
                     }
                     if message.id != comments?.last?.id {
                         Divider()
