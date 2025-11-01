@@ -167,6 +167,10 @@ struct ChangePageView: View {
                     CommitCommentsListView(comments: change.messages)
                 }.padding(4)
             }
+            .refreshable {
+                await self.gerritChangeModel
+                    .fetchChange(changeId: changeId, settings: settings)
+            }
         }
     }
 }

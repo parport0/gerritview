@@ -14,7 +14,6 @@ I really wanted to see the statuses of changes from the change list on mobile. G
 
 ## TODO (in no particular order)
 
-* Pull-to-refresh in the change view
 * Be able to view the patches themselves
 * Be able to comment and vote
 * Show the comments, including inline ones
