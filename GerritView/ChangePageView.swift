@@ -102,7 +102,8 @@ struct ChangePageView: View {
         
         switch gerritChangeModel.state {
         case .empty:
-            Image(systemName: "progress.indicator").symbolEffect(.variableColor.iterative.hideInactiveLayers.nonReversing, options: .repeat(.continuous)).task {
+            ProgressView()
+            .task {
                 await self.gerritChangeModel
                     .fetchChange(changeId: changeId, settings: settings)
             }

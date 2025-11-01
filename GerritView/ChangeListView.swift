@@ -62,7 +62,7 @@ struct ChangeListView: View {
                         ChangeRowView(change: change)
                     }
                 }
-                Text("Loading...")
+                ProgressView()
                     .task { await self.gerritChangesModel.fetchChanges(settings: settings, query: searchText, more: true) }
             }
             .listStyle(.plain)
