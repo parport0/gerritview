@@ -8,13 +8,12 @@ I really wanted to see the statuses of changes from the change list on mobile. G
 
 * Show a list of "is:open" changes
 * Show a list of changes using any search query
-* Show some details about a change: latest revision's commit message, list of changed files, and all comments left under the change
+* Show some details about a change: latest revision's commit message, list of changed files, diff from the branch to the last revision of the change, and all comments left under the change
 * User can set any Gerrit instance URL
 * User can supply a username and token when "HTTP credentials" are used
 
 ## TODO (in no particular order)
 
-* Be able to view the patches themselves
 * Be able to comment and vote
 * Show the comments, including inline ones
 * An easy way to scroll to the top of the change list --- to refresh the list, for example

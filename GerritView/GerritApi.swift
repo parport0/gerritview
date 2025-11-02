@@ -558,6 +558,101 @@ public enum LabelStatus: String, Codable {
     case impossible = "IMPOSSIBLE"
 }
 
+public struct DiffInfo: Codable {
+    let metaA: DiffFileMetaInfo?
+    let metaB: DiffFileMetaInfo?
+    let changeType: ChangeType
+    let intralineStatus: IntralineStatus?
+    let diffHeader: [String]
+    let content: [DiffContent]
+    let webLinks: [DiffWebLinkInfo]?
+    let editWebLinks: [WebLinkInfo]?
+    let binary: Bool?
+    
+    enum CodingKeys: String, CodingKey {
+        case metaA = "meta_a"
+        case metaB = "meta_b"
+        case changeType = "change_type"
+        case intralineStatus = "intraline_status"
+        case diffHeader = "diff_header"
+        case content
+        case webLinks = "web_links"
+        case editWebLinks = "edit_web_links"
+        case binary
+    }
+}
+
+public enum ChangeType: String, Codable {
+    case added = "ADDED"
+    case modified = "MODIFIED"
+    case deleted = "DELETED"
+    case renamed = "RENAMED"
+    case copied = "COPIED"
+    case rewrite = "REWRITE"
+}
+
+public enum IntralineStatus: String, Codable {
+    case ok = "OK"
+    case error = "ERROR"
+    case timeout = "TIMEOUT"
+}
+
+public struct DiffFileMetaInfo: Codable {
+    let name: String
+    let contentType: String
+    let lines: Int
+    let webLinks: [WebLinkInfo]?
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case contentType = "content_type"
+        case lines
+        case webLinks = "web_links"
+    }
+}
+
+public struct DiffContent: Codable, Identifiable {
+    public let id = UUID()
+    let a: [String]?
+    let b: [String]?
+    let ab: [String]?
+    //let editA: DiffIntralineInfo?
+    //let editB: DiffIntralineInfo?
+    let dueToRebase: Bool?
+    let dueToMove: Bool?
+    let skip: Int?
+    let common: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case a
+        case b
+        case ab
+        case dueToRebase = "due_to_rebase"
+        case dueToMove = "due_to_move"
+        case skip
+        case common
+    }
+}
+
+// I think you can't extend codable entries? Copy-paste from WebLinkInfo
+public struct DiffWebLinkInfo: Codable {
+    let name: String
+    let tooltip: String?
+    let url: String
+    let imageUrl: String?
+    let showOnSideBySideDiffView: Bool
+    let showOnUnifiedDiffView: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case tooltip
+        case url
+        case imageUrl = "image_url"
+        case showOnSideBySideDiffView = "show_on_side_by_side_diff_view"
+        case showOnUnifiedDiffView = "show_on_unified_diff_view"
+    }
+}
+
 func setupJsonDecoder() -> JSONDecoder {
     let decoder = JSONDecoder()
     let dateFormatter = DateFormatter()

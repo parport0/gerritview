@@ -20,42 +20,55 @@ struct CommitMessageView: View {
 }
 
 struct CommitFilesListView: View {
+    let change: GerritChange
+    let revision: String
     let files: [String: FileInfo]?
     
     var body: some View {
         if files != nil {
             let sortedKeys: [String] = files!.keys.sorted()
 
-            VStack(alignment: .leading) {
-                ForEach (sortedKeys, id: \.self) { key in
-                    VStack(alignment: .leading) {
-                        Text(key).font(.subheadline)
-                        HStack {
-                            Text(files![key]?.status ?? "")
-                            Spacer()
-                            
-                            if files![key]?.binary != nil {
-                                Text("binary \(String((files![key]?.sizeDelta)!))")
-                                    .foregroundStyle(
-                                        Color(uiColor: .secondaryLabel)
-                                    )
-                                    .font(.footnote)
-                            } else {
-                                Text(
-                                    "+\(String(files![key]?.linesInserted ?? 0))"
-                                )
-                                .foregroundStyle(.green)
-                                .font(.subheadline)
-                                Text(
-                                    "-\(String(files![key]?.linesDeleted ?? 0))"
-                                )
-                                .foregroundStyle(.red)
-                                .font(.subheadline)
+            NavigationStack {
+                VStack(alignment: .leading) {
+                    ForEach (sortedKeys, id: \.self) { key in
+                        NavigationLink(
+                            destination: ChangeDiffView(
+                                changeId: change.tripletId,
+                                revisionId: revision,
+                                file: files![key]!,
+                                fileId: key
+                            )
+                        ) {
+                            VStack(alignment: .leading) {
+                                Text(key).font(.subheadline)
+                                HStack {
+                                    Text(files![key]?.status ?? "")
+                                    Spacer()
+
+                                    if files![key]?.binary != nil {
+                                        Text("binary \(String((files![key]?.sizeDelta)!))")
+                                            .foregroundStyle(
+                                                Color(uiColor: .secondaryLabel)
+                                            )
+                                            .font(.footnote)
+                                    } else {
+                                        Text(
+                                            "+\(String(files![key]?.linesInserted ?? 0))"
+                                        )
+                                        .foregroundStyle(.green)
+                                        .font(.subheadline)
+                                        Text(
+                                            "-\(String(files![key]?.linesDeleted ?? 0))"
+                                        )
+                                        .foregroundStyle(.red)
+                                        .font(.subheadline)
+                                    }
+                                }
+                            }
+                            if key != sortedKeys.last {
+                                Divider()
                             }
                         }
-                    }
-                    if key != sortedKeys.last {
-                        Divider()
                     }
                 }
             }
@@ -137,7 +150,11 @@ struct ChangePageView: View {
                        let currentRevisionContent = revisions[currentRevision]
                     {
                         CommitMessageView(commit: currentRevisionContent.commit)
-                        CommitFilesListView(files: currentRevisionContent.files)
+                        CommitFilesListView(
+                            change: change,
+                            revision: currentRevision,
+                            files: currentRevisionContent.files
+                        )
                     }
 
                     CommitCommentsListView(comments: change.messages)

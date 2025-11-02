@@ -72,6 +72,60 @@ func composeSingleChangeGerritUrl(settings: Settings, change: String) -> URL {
     return url
 }
 
+func composeFileDiffGerritUrl(settings: Settings, change: String, revisionId: String, fileId: String) -> URL {
+    var (url, queryItems) = composeCommonPartOfGerritUrl(settings: settings)
+
+    var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)!
+    var characterSet = CharacterSet.urlPathAllowed
+    characterSet.remove("/")
+    let encodedFilePath: String = fileId.addingPercentEncoding(
+        withAllowedCharacters: characterSet
+    )!
+    urlComponents.percentEncodedPath = url.path() + "/changes/" + change + "/revisions/" + revisionId + "/files/" + encodedFilePath + "/diff"
+    url = urlComponents.url!
+
+    url.append(queryItems: queryItems)
+    print(url)
+    return url
+}
+
+@Observable class GerritFileDiffViewModel {
+    enum State {
+        case empty
+        case failed(Error)
+        case loaded(DiffInfo)
+    }
+    var state: State = State.empty
+
+    func fetchDiff(settings: Settings, changeId: String, revisionId: String, fileId: String) async {
+        let queryUrl = composeFileDiffGerritUrl(
+            settings: settings,
+            change: changeId,
+            revisionId: revisionId,
+            fileId: fileId
+        )
+
+        do {
+            let (json, _) = try await URLSession.shared.data(from: queryUrl)
+            //print(String(data: json, encoding: .utf8)!)
+            let diff = try decodeGerritFileDiffResponse(
+                from: String(data: json, encoding: .utf8)!
+            )
+            self.state = State.loaded(diff!)
+        } catch {
+            let nsError = error as NSError
+
+            if nsError.domain == NSURLErrorDomain,
+               nsError.code == NSURLErrorCancelled {
+                // print("cancelled")
+            } else {
+                self.state = State.failed(error)
+                print(error)
+            }
+        }
+    }
+}
+
 @Observable class GerritChangePageViewModel {
     enum State {
         case empty
