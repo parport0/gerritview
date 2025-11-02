@@ -368,11 +368,13 @@ public struct GitPersonInfo: Codable {
 
 public struct WebLinkInfo: Codable {
     let name: String
+    let tooltip: String?
     let url: String
     let imageUrl: String?
     
     enum CodingKeys: String, CodingKey {
         case name
+        case tooltip
         case url
         case imageUrl = "image_url"
     }
@@ -385,8 +387,12 @@ public struct FileInfo: Codable, Identifiable {
     let oldPath: String?
     let linesInserted: Int?
     let linesDeleted: Int?
-    let sizeDelta: Int64?
-    let size: Int64?
+    let sizeDelta: Int64
+    let size: Int64
+    let oldMode: Int?
+    let newMode: Int?
+    let oldSha: String?
+    let newSha: String?
     
     enum CodingKeys: String, CodingKey {
         case status
@@ -396,6 +402,10 @@ public struct FileInfo: Codable, Identifiable {
         case linesDeleted = "lines_deleted"
         case sizeDelta = "size_delta"
         case size
+        case oldMode = "old_mode"
+        case newMode = "new_mode"
+        case oldSha = "old_sha"
+        case newSha = "new_sha"
     }
 }
 
@@ -548,6 +558,15 @@ public enum LabelStatus: String, Codable {
     case impossible = "IMPOSSIBLE"
 }
 
+func setupJsonDecoder() -> JSONDecoder {
+    let decoder = JSONDecoder()
+    let dateFormatter = DateFormatter()
+    dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSSSSS"
+    dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
+    decoder.dateDecodingStrategy = .formatted(dateFormatter)
+    return decoder
+}
+
 public func decodeGerritChangeListResponse(from jsonString: String) throws -> [GerritChange] {
     // To prevent against Cross Site Script Inclusion (XSSI) attacks, the JSON
     // response body starts with a magic prefix line that must be stripped before
@@ -557,13 +576,8 @@ public func decodeGerritChangeListResponse(from jsonString: String) throws -> [G
     guard let jsonData = cleanedJsonString.data(using: .utf8) else {
         return []
     }
-    
-    let decoder = JSONDecoder()
-    let dateFormatter = DateFormatter()
-    dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSSSSS"
-    dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
-    decoder.dateDecodingStrategy = .formatted(dateFormatter)
-    
+
+    let decoder = setupJsonDecoder()
     let changes = try decoder.decode([GerritChange].self, from: jsonData)
     return changes
 }
@@ -597,17 +611,12 @@ public func decodeGerritSingleChangeResponse(from jsonString: String) throws -> 
     // response body starts with a magic prefix line that must be stripped before
     // feeding the rest of the response body to a JSON parser:
     let cleanedJsonString = jsonString.replacingOccurrences(of: ")]}'\n", with: "")
-    
+
     guard let jsonData = cleanedJsonString.data(using: .utf8) else {
         return nil
     }
     
-    let decoder = JSONDecoder()
-    let dateFormatter = DateFormatter()
-    dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSSSSS"
-    dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
-    decoder.dateDecodingStrategy = .formatted(dateFormatter)
-
+    let decoder = setupJsonDecoder()
     var change = try decoder.decode(GerritChange.self, from: jsonData)
 
     if change.messages != nil {
@@ -619,46 +628,18 @@ public func decodeGerritSingleChangeResponse(from jsonString: String) throws -> 
     return change
 }
 
-@ViewBuilder func requirementIcon(status: SubmitRequirementResultStatus) -> some View {
-    switch status {
-    case .satisfied:
-        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-    case .unsatisfied:
-        Image(systemName: "x.circle.fill").foregroundStyle(.red)
-    case .forced:
-        Image(systemName: "checkmark.circle.trianglebadge.exclamationmark.fill").foregroundStyle(.green)
-    case .overridden:
-        Image(systemName: "checkmark.shield.fill").foregroundStyle(.green)
-    case .error:
-        Image(systemName: "questionmark.circle.fill")
-            .foregroundStyle(.red)
-    case .notApplicable:
-        Image(systemName: "circle.fill")
-    }
-}
+public func decodeGerritFileDiffResponse(from jsonString: String) throws -> DiffInfo? {
+    // To prevent against Cross Site Script Inclusion (XSSI) attacks, the JSON
+    // response body starts with a magic prefix line that must be stripped before
+    // feeding the rest of the response body to a JSON parser:
+    let cleanedJsonString = jsonString.replacingOccurrences(of: ")]}'\n", with: "")
 
-@ViewBuilder func changeStatusIcon(status: ChangeStatus) -> some View {
-    switch status {
-    case .abandoned:
-        Text("ABANDONED")
-            .padding(4)
-            .fontWeight(.bold)
-            .font(.subheadline)
-            .foregroundStyle(.white)
-            .background(Color.gray, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-    case .merged:
-        Text("MERGED")
-            .padding(4)
-            .fontWeight(.bold)
-            .font(.subheadline)
-            .foregroundStyle(.white)
-            .background(Color.green, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-    case .new:
-        Text("NEW")
-            .padding(4)
-            .fontWeight(.bold)
-            .font(.subheadline)
-            .foregroundStyle(.white)
-            .background(Color.blue, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    guard let jsonData = cleanedJsonString.data(using: .utf8) else {
+        return nil
     }
+
+    let decoder = setupJsonDecoder()
+    let diff = try decoder.decode(DiffInfo.self, from: jsonData)
+
+    return diff
 }

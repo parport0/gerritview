@@ -11,10 +11,10 @@ struct CommitMessageView: View {
                 maxWidth: .infinity,
                 alignment: .leading
             )
-                .padding(4)
-                .background(
-                    Color(UIColor.systemGroupedBackground)
-                )
+            .padding(4)
+            .background(
+                Color(UIColor.systemGroupedBackground)
+            )
         }
     }
 }
@@ -66,7 +66,6 @@ struct CommitFilesListView: View {
     }
 }
 
-
 struct CommitCommentsListView: View {
     let comments: [ChangeMessageInfo]?
 
@@ -96,7 +95,7 @@ struct ChangePageView: View {
     var changeId: String
     @State private var gerritChangeModel = GerritChangePageViewModel()
     @Environment(Settings.self) var settings: Settings
-    
+
     var body: some View {
         @Bindable var settings = settings
         
@@ -105,7 +104,7 @@ struct ChangePageView: View {
             ProgressView()
             .task {
                 await self.gerritChangeModel
-                    .fetchChange(changeId: changeId, settings: settings)
+                    .fetchChange(settings: settings, changeId: changeId)
             }
         case .failed(let error):
             Text(error.localizedDescription)
@@ -140,14 +139,58 @@ struct ChangePageView: View {
                         CommitMessageView(commit: currentRevisionContent.commit)
                         CommitFilesListView(files: currentRevisionContent.files)
                     }
-                    
+
                     CommitCommentsListView(comments: change.messages)
                 }.padding(4)
             }
             .refreshable {
                 await self.gerritChangeModel
-                    .fetchChange(changeId: changeId, settings: settings)
+                    .fetchChange(settings: settings, changeId: changeId)
             }
         }
+    }
+}
+
+@ViewBuilder func requirementIcon(status: SubmitRequirementResultStatus) -> some View {
+    switch status {
+    case .satisfied:
+        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+    case .unsatisfied:
+        Image(systemName: "x.circle.fill").foregroundStyle(.red)
+    case .forced:
+        Image(systemName: "checkmark.circle.trianglebadge.exclamationmark.fill").foregroundStyle(.green)
+    case .overridden:
+        Image(systemName: "checkmark.shield.fill").foregroundStyle(.green)
+    case .error:
+        Image(systemName: "questionmark.circle.fill")
+            .foregroundStyle(.red)
+    case .notApplicable:
+        Image(systemName: "circle.fill")
+    }
+}
+
+@ViewBuilder func changeStatusIcon(status: ChangeStatus) -> some View {
+    switch status {
+    case .abandoned:
+        Text("ABANDONED")
+            .padding(4)
+            .fontWeight(.bold)
+            .font(.subheadline)
+            .foregroundStyle(.white)
+            .background(Color.gray, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    case .merged:
+        Text("MERGED")
+            .padding(4)
+            .fontWeight(.bold)
+            .font(.subheadline)
+            .foregroundStyle(.white)
+            .background(Color.green, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    case .new:
+        Text("NEW")
+            .padding(4)
+            .fontWeight(.bold)
+            .font(.subheadline)
+            .foregroundStyle(.white)
+            .background(Color.blue, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }

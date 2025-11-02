@@ -15,7 +15,7 @@ func composeCommonPartOfGerritUrl(settings: Settings) -> (URL, [URLQueryItem]) {
         )
         URLCredentialStorage.shared.setDefaultCredential(credential, for: protectionSpace)
     }
-    
+
     var queryItems = [
         URLQueryItem(name: "pp", value: "0")
     ]
@@ -30,7 +30,7 @@ func composeCommonPartOfGerritUrl(settings: Settings) -> (URL, [URLQueryItem]) {
 
 func composeChangesListGerritUrl(settings: Settings, query: String?, skip: Int, loadCount: Int) -> URL {
     var (url, queryItems) = composeCommonPartOfGerritUrl(settings: settings)
-    
+
     url = url.appendingPathComponent("changes")
     queryItems.append(contentsOf: [
         URLQueryItem(name: "o", value: "DETAILED_ACCOUNTS"),
@@ -47,7 +47,7 @@ func composeChangesListGerritUrl(settings: Settings, query: String?, skip: Int, 
 
 func composeSingleChangeGerritUrl(settings: Settings, change: String) -> URL {
     var (url, queryItems) = composeCommonPartOfGerritUrl(settings: settings)
-    
+
     var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)!
     urlComponents.percentEncodedPath = url.path() + "/changes/" + change
     url = urlComponents.url!
@@ -80,7 +80,7 @@ func composeSingleChangeGerritUrl(settings: Settings, change: String) -> URL {
     }
     var state: State = State.empty
 
-    func fetchChange(changeId: String, settings: Settings) async {
+    func fetchChange(settings: Settings, changeId: String) async {
         let queryUrl = composeSingleChangeGerritUrl(
             settings: settings,
             change: changeId
@@ -113,7 +113,7 @@ func composeSingleChangeGerritUrl(settings: Settings, change: String) -> URL {
     var errorMessage = ""
     var fetched = 0
     let loadCount = 10
-    
+
     func clearChanges() {
         self.fetched = 0
         self.changes = []
