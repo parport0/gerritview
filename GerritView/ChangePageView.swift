@@ -91,7 +91,7 @@ struct CommitCommentsListView: View {
                             Text(message.date.formatted()).font(.footnote)
                             Text(message.author?.Name() ?? "Gerrit" )
                                 .font(.footnote)
-                        }.padding(.bottom)
+                        }
                         Text(message.attributedMessage!).font(.subheadline)
                     }
                     if message.id != comments?.last?.id {

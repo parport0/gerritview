@@ -30,16 +30,16 @@ class DiffScrollViewController: UIViewController {
                     summedText.append(
                         NSAttributedString(
                             string: c.a!.joined(separator: "\n") + "\n",
-                            attributes: [.backgroundColor: UIColor.init(
-                                red: CGFloat(0xE8) / 255.0,
-                                green: CGFloat(0xDC) / 255.0,
-                                blue: CGFloat(0xDA) / 255.0,
-                                alpha: 1.0
-                            ),
+                            attributes: [
                                          .font: UIFont.monospacedSystemFont(
                                             ofSize: UIFont.smallSystemFontSize,
                                             weight: .medium
-                                         )]
+                                         ),
+                                         .foregroundColor: UIColor.init(
+                                            red: 0.7,
+                                            green: 0.3,
+                                            blue: 0.3,
+                                            alpha: 1.0)]
                         )
                     )
                 }
@@ -47,16 +47,18 @@ class DiffScrollViewController: UIViewController {
                     summedText.append(
                         NSAttributedString(
                             string: c.b!.joined(separator: "\n") + "\n",
-                            attributes: [.backgroundColor: UIColor.init(
-                                red: CGFloat(0xDC) / 255.0,
-                                green: CGFloat(0xE8) / 255.0,
-                                blue: CGFloat(0xDA) / 255.0,
-                                alpha: 1.0
-                            ),
-                                         .font: UIFont.monospacedSystemFont(
+                            attributes: [
+                                .font: UIFont.monospacedSystemFont(
                                             ofSize: UIFont.smallSystemFontSize,
                                             weight: .medium
-                                         )]
+                                         ),
+                                         .foregroundColor: UIColor.init(
+                                            red: 0.3,
+                                            green: 0.7,
+                                            blue: 0.3,
+                                            alpha: 1.0
+                                         )
+                                ]
                         )
                     )
                 }
@@ -64,11 +66,10 @@ class DiffScrollViewController: UIViewController {
                     summedText.append(
                         NSAttributedString(
                             string: c.ab!.joined(separator: "\n") + "\n",
-                            attributes: [.backgroundColor: UIColor.systemGroupedBackground,
-                                         .font: UIFont.monospacedSystemFont(
+                            attributes: [.font: UIFont.monospacedSystemFont(
                                             ofSize: UIFont.smallSystemFontSize,
                                             weight: .medium
-                                         )]
+                            ), .foregroundColor: UIColor.black]
                         )
                     )
                 }
@@ -76,31 +77,10 @@ class DiffScrollViewController: UIViewController {
         default: break
         }
 
-        let textContentStorage = NSTextContentStorage()
-
-        let textLayoutManager = NSTextLayoutManager()
-        textLayoutManager.usesHyphenation = false
-        textContentStorage.addTextLayoutManager(textLayoutManager)
-        textContentStorage.primaryTextLayoutManager = textLayoutManager
-
-        let textContainer = NSTextContainer()
-        textLayoutManager.textContainer = textContainer
-
-        textContentStorage.attributedString = summedText
-
-        textView = UITextView(frame: .zero, textContainer: textContainer)
-
-        textView.isScrollEnabled = true
-        textView.isSelectable = true  // TODO: SELECTION DOES NOT WORK!! But only with TextKit 2. Selects just fine with TextKit 1.
-        textView.isDirectionalLockEnabled = true
+        let textView = UITextView(usingTextLayoutManager: true)
+        textView.attributedText = summedText
         textView.isEditable = false
-        textView.isUserInteractionEnabled = true
-        textView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-
-        textContainer.maximumNumberOfLines = 0
-        textContainer.lineFragmentPadding = 2
-        textContainer.lineBreakMode = .byCharWrapping
-        textLayoutManager.ensureLayout(for: textContentStorage.documentRange)
+        textView.isSelectable = true
 
         return textView
     }
@@ -176,26 +156,22 @@ struct ChangeDiffView: View {
                 }
         case .failed(let error):
             Text(error.localizedDescription)
-        case .loaded(_):
-            DiffScrollViewControllerRepresentable(model: $gerritDiffModel).border(Color.blue, width: 3)
-                //.fixedSize()
-/*            ScrollView(.vertical) {
-                LazyVStack(alignment: .leading, spacing: 2) {
-                    Text(diff.changeType.rawValue).font(.headline)
-                    Text(
-                        verbatim: diff.diffHeader[2...3].joined(separator: "\n")
-                    ).fontDesign(.monospaced).font(.footnote).fontWeight(.semibold).frame(
-                        maxWidth: .infinity,
-                        alignment: .leading
-                    )
-                    .padding(4)
-                    .background(
-                        Color(UIColor.systemGroupedBackground)
-                    )
+        case .loaded(let diff):
+            VStack(alignment: .leading, spacing: 2) {
+                Text(diff.changeType.rawValue).font(.headline)
+                Text(
+                    verbatim: diff.diffHeader[2...3].joined(separator: "\n")
+                ).fontDesign(.monospaced).font(.footnote).fontWeight(.semibold).frame(
+                    maxWidth: .infinity,
+                    alignment: .leading
+                )
+                .padding(4)
+                .background(
+                    Color(UIColor.systemGroupedBackground)
+                )
+                DiffScrollViewControllerRepresentable(model: $gerritDiffModel)
+            }
 
-                    diffTextView(diffContent: diff.content)
-                }
-            }*/
         }
     }
 }
