@@ -89,7 +89,8 @@ struct CommitCommentsListView: View {
                     VStack(alignment: .leading) {
                         HStack {
                             Text(message.date.formatted()).font(.footnote)
-                            Text(message.author!.Name()).font(.footnote)
+                            Text(message.author?.Name() ?? "Gerrit" )
+                                .font(.footnote)
                         }.padding(.bottom)
                         Text(message.attributedMessage!).font(.subheadline)
                     }

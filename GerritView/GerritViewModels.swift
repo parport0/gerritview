@@ -85,7 +85,7 @@ func composeFileDiffGerritUrl(settings: Settings, change: String, revisionId: St
     url = urlComponents.url!
 
     url.append(queryItems: queryItems)
-    print(url)
+    //print(url)
     return url
 }
 
