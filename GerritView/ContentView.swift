@@ -48,3 +48,7 @@ struct ContentView: View {
         }.environment(settings)
     }
 }
+
+#Preview {
+    ContentView()
+}

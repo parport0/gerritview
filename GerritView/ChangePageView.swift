@@ -112,7 +112,7 @@ struct ChangePageView: View {
 
     var body: some View {
         @Bindable var settings = settings
-        
+
         switch gerritChangeModel.state {
         case .empty:
             ProgressView()
@@ -210,5 +210,14 @@ struct ChangePageView: View {
             .font(.subheadline)
             .foregroundStyle(.white)
             .background(Color.blue, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+}
+
+#Preview {
+    @Previewable @State var settings = Settings()
+    NavigationStack {
+        ChangePageView(
+            changeId: "platform%2Fmanifest~master~I76ee129f19dbfbda4ea9abadcb2e280c107aefab"
+        ).environment(settings)
     }
 }
