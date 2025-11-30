@@ -88,8 +88,14 @@ struct CommitCommentsListView: View {
                 ForEach (comments!) { message in
                     VStack(alignment: .leading) {
                         HStack {
+                            let author: String = message.author?.Name() ?? "Gerrit" + (
+                                (
+                                    message.realAuthor != nil
+                                ) ? " on behalf of " + message.realAuthor!.Name() : ""
+                            )
+
                             Text(message.date.formatted()).font(.footnote)
-                            Text(message.author?.Name() ?? "Gerrit" )
+                            Text(author)
                                 .font(.footnote)
                         }
                         Text(message.attributedMessage!).font(.subheadline)
