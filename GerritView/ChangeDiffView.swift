@@ -127,7 +127,6 @@ struct DiffScrollViewControllerRepresentable: UIViewControllerRepresentable {
     func makeCoordinator() -> Coordinator {
         Coordinator()
     }
-
 }
 
 struct ChangeDiffView: View {

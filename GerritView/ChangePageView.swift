@@ -79,6 +79,87 @@ struct CommitFilesListView: View {
     }
 }
 
+
+struct CommentText: View {
+    private var message: ChangeMessageInfo
+    @State private var dynamicHeight: CGFloat = 100
+
+    init (message: ChangeMessageInfo) {
+        self.message = message
+    }
+
+    var body: some View {
+        
+        CommentTextViewRepresentable(message: self.message, calculatedHeight: $dynamicHeight)
+            .frame(
+                minHeight: dynamicHeight,
+                maxHeight: dynamicHeight
+            )
+    }
+}
+
+struct CommentTextViewRepresentable: UIViewRepresentable {
+    typealias UIViewType = UITextView
+
+    var message: ChangeMessageInfo
+    @Binding var calculatedHeight: CGFloat
+
+    func makeUIView(context: UIViewRepresentableContext<CommentTextViewRepresentable>) -> UITextView {
+        let textField = UITextView()
+        textField.delegate = context.coordinator
+
+        textField.isEditable = false
+        textField.isSelectable = true
+        textField.isUserInteractionEnabled = true
+        textField.isScrollEnabled = false
+        textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        textField.textContainer.lineBreakMode = .byCharWrapping
+        return textField
+    }
+
+    private func processString(str: String) -> NSAttributedString {
+        let attributedString = NSMutableAttributedString(string: str)
+
+        let types = NSTextCheckingResult.CheckingType.link.rawValue
+
+        guard let detector = try? NSDataDetector(types: types) else {
+            return attributedString
+        }
+
+        let matches = detector.matches(in: attributedString.string, options: [], range: NSRange(location: 0, length: attributedString.string.utf16.count))
+
+        for match in matches {
+            let range = match.range
+            let link = (attributedString.string as NSString).substring(with: range)
+            let replacement = NSAttributedString(string: link, attributes: [.link: link])
+            attributedString.replaceCharacters(in: range, with: replacement)
+        }
+        return attributedString
+    }
+
+    func updateUIView(_ uiView: UITextView, context: UIViewRepresentableContext<CommentTextViewRepresentable>) {
+        uiView.attributedText = processString(str: self.message.message)
+        CommentTextViewRepresentable
+            .recalculateHeight(view: uiView, result: $calculatedHeight)
+    }
+
+    private static func recalculateHeight(view: UIView, result: Binding<CGFloat>) {
+        let newSize = view.sizeThatFits(CGSize(width: view.frame.size.width, height: CGFloat.greatestFiniteMagnitude))
+        if result.wrappedValue != newSize.height {
+            DispatchQueue.main.async {
+                result.wrappedValue = newSize.height
+            }
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    final class Coordinator: NSObject, UITextViewDelegate {
+    }
+}
+
 struct CommitCommentsListView: View {
     let comments: [ChangeMessageInfo]?
 
@@ -98,7 +179,7 @@ struct CommitCommentsListView: View {
                             Text(author)
                                 .font(.footnote)
                         }
-                        Text(message.attributedMessage!).font(.subheadline)
+                        CommentText(message: message)
                     }
                     if message.id != comments?.last?.id {
                         Divider()
