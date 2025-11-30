@@ -69,7 +69,7 @@ class DiffScrollViewController: UIViewController {
                             attributes: [.font: UIFont.monospacedSystemFont(
                                             ofSize: UIFont.smallSystemFontSize,
                                             weight: .medium
-                            ), .foregroundColor: UIColor.black]
+                            ), .foregroundColor: UIColor.label]
                         )
                     )
                 }
@@ -171,7 +171,6 @@ struct ChangeDiffView: View {
                 )
                 DiffScrollViewControllerRepresentable(model: $gerritDiffModel)
             }
-
         }
     }
 }
