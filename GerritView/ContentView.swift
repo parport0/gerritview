@@ -21,13 +21,30 @@ extension View {
     }
 }
 
+struct AccountInfoView: View {
+    var id: Int
+
+    var body: some View {
+        Text(String(id))
+    }
+}
+
 struct ContentView: View {
     @State var settings = Settings()
-    
+    @State private var path = NavigationPath()
+
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             VStack {
                 ChangeListView()
+            }.onOpenURL { url in
+                let components = URLComponents(string: url.absoluteString)
+                if (components?.scheme == "gerritview") {
+                    let userId = Int((components?.host!)!)
+                    path.append(AccountId(accountId: userId!))
+                }
+            }.navigationDestination(for: AccountId.self) { id in
+                AccountInfoView(id: id.accountId)
             }
             .toolbar {
                 Group {

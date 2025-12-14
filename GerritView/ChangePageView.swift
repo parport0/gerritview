@@ -28,8 +28,7 @@ struct CommitFilesListView: View {
         if files != nil {
             let sortedKeys: [String] = files!.keys.sorted()
 
-            NavigationStack {
-                VStack(alignment: .leading) {
+            VStack(alignment: .leading) {
                     ForEach (sortedKeys, id: \.self) { key in
                         NavigationLink(
                             destination: ChangeDiffView(
@@ -70,7 +69,6 @@ struct CommitFilesListView: View {
                             }
                         }
                     }
-                }
             }
             .padding(4)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -89,7 +87,6 @@ struct CommentText: View {
     }
 
     var body: some View {
-        
         CommentTextViewRepresentable(message: self.message, calculatedHeight: $dynamicHeight)
             .frame(
                 minHeight: dynamicHeight,
@@ -98,15 +95,28 @@ struct CommentText: View {
     }
 }
 
+/*class CommentTextLayoutManagerDelegate: NSObject, NSTextLayoutManagerDelegate {
+    func textLayoutManager(_ textLayoutManager: NSTextLayoutManager, textLayoutFragmentFor location: any NSTextLocation, in textElement: NSTextElement) -> NSTextLayoutFragment {
+
+        return NSTextLayoutFragment(textElement: textElement, range: textElement.elementRange)
+    }
+}*/
+
+/*extension NSAttributedString.Key {
+    static let isGerritAccount = NSAttributedString.Key("IsGerritAccount")
+}*/
+
 struct CommentTextViewRepresentable: UIViewRepresentable {
     typealias UIViewType = UITextView
 
     var message: ChangeMessageInfo
     @Binding var calculatedHeight: CGFloat
 
+    //let commentLayoutDelegate = CommentTextLayoutManagerDelegate()
+
     func makeUIView(context: UIViewRepresentableContext<CommentTextViewRepresentable>) -> UITextView {
-        let textField = UITextView()
-        textField.delegate = context.coordinator
+
+        let textField = UITextView(usingTextLayoutManager: true)
 
         textField.isEditable = false
         textField.isSelectable = true
@@ -114,31 +124,68 @@ struct CommentTextViewRepresentable: UIViewRepresentable {
         textField.isScrollEnabled = false
         textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         textField.textContainer.lineBreakMode = .byCharWrapping
+        //textField.textLayoutManager!.delegate = commentLayoutDelegate
         return textField
     }
 
     private func processString(str: String) -> NSAttributedString {
         let attributedString = NSMutableAttributedString(string: str)
 
+        // Find links
         let types = NSTextCheckingResult.CheckingType.link.rawValue
-
         guard let detector = try? NSDataDetector(types: types) else {
             return attributedString
         }
-
-        let matches = detector.matches(in: attributedString.string, options: [], range: NSRange(location: 0, length: attributedString.string.utf16.count))
-
-        for match in matches {
+        let url_matches = detector.matches(in: attributedString.string, options: [], range: NSRange(location: 0, length: attributedString.string.utf16.count))
+        for match in url_matches {
             let range = match.range
             let link = (attributedString.string as NSString).substring(with: range)
             let replacement = NSAttributedString(string: link, attributes: [.link: link])
             attributedString.replaceCharacters(in: range, with: replacement)
         }
+
+        // Find Gerrit account names
+        // Regex from Gerrit's AccountTemplateUtil.java
+        let regex = try? NSRegularExpression(pattern: "<GERRIT_ACCOUNT_([0-9]+)>")
+        let acct_matches = (
+            regex!
+                .matches(
+                    in: attributedString.string,
+                    range: NSRange(
+                        location: 0,
+                        length: attributedString.string.utf16.count
+                    )
+                )
+        )
+        for match in acct_matches {
+            let acct_id = (attributedString.string as NSString).substring(
+                with: match.range(at: 1)
+            )
+            var acct_name = acct_id
+            for account in message.accountsInMessage! {
+                if account.accountId == Int(acct_id)! {
+                    acct_name = account.Name()
+                }
+            }
+            let replacement = NSAttributedString(
+                string: acct_name,
+                attributes: [
+                    /*.isGerritAccount: true,*/
+                    .foregroundColor: UIColor(.blue),
+                    .backgroundColor: UIColor.secondarySystemBackground,
+                    .link: "gerritview://" + acct_id
+                ]
+            )
+            attributedString.replaceCharacters(in: match.range, with: replacement)
+
+        }
+
         return attributedString
     }
 
     func updateUIView(_ uiView: UITextView, context: UIViewRepresentableContext<CommentTextViewRepresentable>) {
         uiView.attributedText = processString(str: self.message.message)
+
         CommentTextViewRepresentable
             .recalculateHeight(view: uiView, result: $calculatedHeight)
     }

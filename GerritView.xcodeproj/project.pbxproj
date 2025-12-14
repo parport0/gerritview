@@ -10,9 +10,22 @@
 		BD15DF752EA022DC001831C0 /* GerritView.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GerritView.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		BD53BEF02EEF5DF000C2E4DB /* Exceptions for "GerritView" folder in "GerritView" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = BD15DF742EA022DC001831C0 /* GerritView */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		BD15DF772EA022DC001831C0 /* GerritView */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				BD53BEF02EEF5DF000C2E4DB /* Exceptions for "GerritView" folder in "GerritView" target */,
+			);
 			path = GerritView;
 			sourceTree = "<group>";
 		};
@@ -256,6 +269,7 @@
 				DEVELOPMENT_TEAM = 78ZP55T8GD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = GerritView/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Gerrit View";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -295,6 +309,7 @@
 				DEVELOPMENT_TEAM = 78ZP55T8GD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = GerritView/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Gerrit View";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

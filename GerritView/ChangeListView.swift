@@ -51,7 +51,6 @@ struct ChangeListView: View {
     
     var body: some View {
         @Bindable var settings = settings
-        NavigationStack {
             List {
                 ForEach($gerritChangesModel.changes) { $change in
                     NavigationLink(
@@ -76,7 +75,6 @@ struct ChangeListView: View {
                 queryText = searchText
                 gerritChangesModel.clearChanges()
             }
-        }
         .alert("Communication failure", isPresented: $gerritChangesModel.showAlert, presenting: gerritChangesModel.errorMessage) { _ in
             Button("Dismiss") {  }
         } message: { details in

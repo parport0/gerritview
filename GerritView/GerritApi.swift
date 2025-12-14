@@ -145,6 +145,10 @@ public struct AttentionSetEntry: Codable {
     }
 }
 
+struct AccountId: Hashable {
+    let accountId: Int
+}
+
 public struct AccountInfo: Codable {
     let accountId: Int?
     let name: String?
@@ -281,6 +285,7 @@ public struct ChangeMessageInfo: Codable, Identifiable {
     public let id: String
     let author: AccountInfo?
     let realAuthor: AccountInfo?
+    let accountsInMessage: [AccountInfo]?
     let date: Date
     let message: String
     let tag: String?
@@ -290,6 +295,7 @@ public struct ChangeMessageInfo: Codable, Identifiable {
         case id
         case author
         case realAuthor = "real_author"
+        case accountsInMessage = "accounts_in_message"
         case date
         case message
         case tag
