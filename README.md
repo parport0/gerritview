@@ -2,6 +2,8 @@
 
 This is nothing serious. My first Swift application. Learning.
 
+*I got a bit disappointed in Textkit 2 and in general, how one is expected to work with text in SwiftUI. That's why there is less activity here now.*
+
 I really wanted to see the statuses of changes from the change list on mobile. Gerrit web UI hides the status icons when the view is too narrow.
 
 ## What it can do
