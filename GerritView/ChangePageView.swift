@@ -157,7 +157,7 @@ struct CommentTextViewRepresentable: UIViewRepresentable {
                     )
                 )
         )
-        for match in acct_matches {
+        for match in acct_matches.reversed() {
             let acct_id = (attributedString.string as NSString).substring(
                 with: match.range(at: 1)
             )
