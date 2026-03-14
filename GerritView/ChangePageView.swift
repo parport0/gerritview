@@ -129,7 +129,17 @@ struct CommentTextViewRepresentable: UIViewRepresentable {
     }
 
     private func processString(str: String) -> NSAttributedString {
-        let attributedString = NSMutableAttributedString(string: str)
+        var cleanedString = str
+        if let regex = try? NSRegularExpression(pattern: #"^Patch Set \d+:\s*"#) {
+            cleanedString = regex.stringByReplacingMatches(
+                in: str,
+                options: [],
+                range: NSRange(str.startIndex..<str.endIndex, in: str),
+                withTemplate: ""
+            )
+        }
+
+        let attributedString = NSMutableAttributedString(string: cleanedString)
 
         // Find links
         let types = NSTextCheckingResult.CheckingType.link.rawValue
@@ -223,6 +233,10 @@ struct CommitCommentsListView: View {
                             )
 
                             Text(message.date.formatted()).font(.footnote)
+                            if (message.revisionNumber != nil) {
+                                Text("PS\(message.revisionNumber!)")
+                                    .font(.footnote)
+                            }
                             Text(author)
                                 .font(.footnote)
                         }
