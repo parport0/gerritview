@@ -77,21 +77,137 @@ struct CommitFilesListView: View {
     }
 }
 
+struct VotePillInfo: Hashable, Identifiable {
+    let id = UUID()
+    let label: String
+    let value: Int
+}
+
+struct VotePillView: View {
+    let labelName: String
+    let value: Int
+
+    var color: Color {
+        if value > 0 { return .green }
+        if value < 0 { return .red }
+        return .gray
+    }
+
+    var symbol: String {
+        if value > 0 { return "+" }
+        return ""
+    }
+
+    var body: some View {
+        HStack(spacing: 2) {
+            Text(labelName)
+                .font(.caption)
+                .fontWeight(.medium)
+            Text(symbol + String(value))
+                .font(.caption)
+                .fontWeight(.semibold)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(color.opacity(0.15))
+        .foregroundColor(color)
+        .cornerRadius(4)
+        .overlay(
+            RoundedRectangle(cornerRadius: 4)
+                .stroke(color.opacity(0.3), lineWidth: 0.5)
+        )
+    }
+}
+
+
+
+extension String {
+    var firstLine: String {
+        return self.components(separatedBy: .newlines).first ?? self
+    }
+
+    func extractGerritVotePrefix() -> (String, [VotePillInfo]) {
+        var cleaned = self
+        var pills: [VotePillInfo] = []
+
+        let prefixRegex = try? NSRegularExpression(pattern: #"^Patch Set \d+:.*"#, options: [])
+        guard (prefixRegex?.firstMatch(in: self.firstLine,
+                                       options: [],
+                                       range: NSRange(0..<self.firstLine.utf16.count))) != nil else {
+            return (self, [])
+        }
+
+        if self.firstLine.localizedCaseInsensitiveContains("Cherry Picked from") {
+            return (self, [])
+        }
+
+        let voteRegex = try? NSRegularExpression(
+            pattern: #"\s*([A-Za-z][A-Za-z0-9\-_]*)\s*([+-]\d+)\s*"#,
+            options: []
+        )
+
+        if let matches = voteRegex?.matches(in: self.firstLine,
+                                            options: [],
+                                            range: NSRange(0..<self.firstLine.utf16.count)),
+           !matches.isEmpty {
+            for match in matches {
+                let labelRange = Range(match.range(at: 1), in: firstLine)
+                let valueRange = Range(match.range(at: 2), in: firstLine)
+
+                guard let labelRange, let valueRange else {
+                    break
+                }
+
+                let label = String(firstLine[labelRange])
+                let valueString = String(firstLine[valueRange])
+                guard let value = Int(valueString) else {
+                    break
+                }
+
+                pills.append(VotePillInfo(label: label, value: value))
+            }
+
+            cleaned = self
+                .components(separatedBy: .newlines)
+                .dropFirst().joined(separator: "\n")
+        }
+
+        return (cleaned, pills)
+    }
+}
+
 
 struct CommentText: View {
     private var message: ChangeMessageInfo
     @State private var dynamicHeight: CGFloat = 100
+    @State private var votePills: [VotePillInfo] = []
 
-    init (message: ChangeMessageInfo) {
+    init(message: ChangeMessageInfo) {
         self.message = message
     }
 
     var body: some View {
-        CommentTextViewRepresentable(message: self.message, calculatedHeight: $dynamicHeight)
-            .frame(
-                minHeight: dynamicHeight,
-                maxHeight: dynamicHeight
-            )
+        VStack(alignment: .leading, spacing: 4) {
+            // Show vote pills above comment
+            if !votePills.isEmpty {
+                HStack(spacing: 4) {
+                    ForEach(votePills) { pill in
+                        VotePillView(labelName: pill.label, value: pill.value)
+                    }
+                }
+            }
+
+            // Comment text (with pills stripped from text)
+            CommentTextViewRepresentable(message: self.message, calculatedHeight: $dynamicHeight)
+                .frame(
+                    minHeight: dynamicHeight,
+                    maxHeight: dynamicHeight
+                )
+        }
+        .onAppear {
+            let (_, pills) = message.message.extractGerritVotePrefix()
+            votePills = pills
+        }
     }
 }
 
@@ -129,15 +245,7 @@ struct CommentTextViewRepresentable: UIViewRepresentable {
     }
 
     private func processString(str: String) -> NSAttributedString {
-        var cleanedString = str
-        if let regex = try? NSRegularExpression(pattern: #"^Patch Set \d+:\s*"#) {
-            cleanedString = regex.stringByReplacingMatches(
-                in: str,
-                options: [],
-                range: NSRange(str.startIndex..<str.endIndex, in: str),
-                withTemplate: ""
-            )
-        }
+        let (cleanedString, _) = str.extractGerritVotePrefix()
 
         let attributedString = NSMutableAttributedString(string: cleanedString)
 
