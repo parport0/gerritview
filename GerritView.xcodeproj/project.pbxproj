@@ -6,12 +6,31 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		BD9C90402F7064D100B8B20D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BD15DF6D2EA022DC001831C0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BD15DF742EA022DC001831C0;
+			remoteInfo = GerritView;
+		};
+		BD9C904D2F7064DC00B8B20D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BD15DF6D2EA022DC001831C0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BD15DF742EA022DC001831C0;
+			remoteInfo = GerritView;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		BD15DF752EA022DC001831C0 /* GerritView.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GerritView.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BD9C903A2F7064D100B8B20D /* GerritViewUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GerritViewUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BD9C90492F7064DC00B8B20D /* GerritViewUnitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GerritViewUnitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		BD53BEF02EEF5DF000C2E4DB /* Exceptions for "GerritView" folder in "GerritView" target */ = {
+		BD9C90552F70661F00B8B20D /* Exceptions for "GerritView" folder in "GerritView" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -24,15 +43,39 @@
 		BD15DF772EA022DC001831C0 /* GerritView */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				BD53BEF02EEF5DF000C2E4DB /* Exceptions for "GerritView" folder in "GerritView" target */,
+				BD9C90552F70661F00B8B20D /* Exceptions for "GerritView" folder in "GerritView" target */,
 			);
 			path = GerritView;
+			sourceTree = "<group>";
+		};
+		BD9C903B2F7064D100B8B20D /* GerritViewUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = GerritViewUITests;
+			sourceTree = "<group>";
+		};
+		BD9C904A2F7064DC00B8B20D /* GerritViewUnitTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = GerritViewUnitTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		BD15DF722EA022DC001831C0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BD9C90372F7064D100B8B20D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BD9C90462F7064DC00B8B20D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -46,6 +89,8 @@
 			isa = PBXGroup;
 			children = (
 				BD15DF772EA022DC001831C0 /* GerritView */,
+				BD9C903B2F7064D100B8B20D /* GerritViewUITests */,
+				BD9C904A2F7064DC00B8B20D /* GerritViewUnitTests */,
 				BD15DF762EA022DC001831C0 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -54,6 +99,8 @@
 			isa = PBXGroup;
 			children = (
 				BD15DF752EA022DC001831C0 /* GerritView.app */,
+				BD9C903A2F7064D100B8B20D /* GerritViewUITests.xctest */,
+				BD9C90492F7064DC00B8B20D /* GerritViewUnitTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -83,6 +130,52 @@
 			productReference = BD15DF752EA022DC001831C0 /* GerritView.app */;
 			productType = "com.apple.product-type.application";
 		};
+		BD9C90392F7064D100B8B20D /* GerritViewUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BD9C90442F7064D100B8B20D /* Build configuration list for PBXNativeTarget "GerritViewUITests" */;
+			buildPhases = (
+				BD9C90362F7064D100B8B20D /* Sources */,
+				BD9C90372F7064D100B8B20D /* Frameworks */,
+				BD9C90382F7064D100B8B20D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BD9C90412F7064D100B8B20D /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				BD9C903B2F7064D100B8B20D /* GerritViewUITests */,
+			);
+			name = GerritViewUITests;
+			packageProductDependencies = (
+			);
+			productName = GerritViewUITests;
+			productReference = BD9C903A2F7064D100B8B20D /* GerritViewUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		BD9C90482F7064DC00B8B20D /* GerritViewUnitTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BD9C904F2F7064DC00B8B20D /* Build configuration list for PBXNativeTarget "GerritViewUnitTests" */;
+			buildPhases = (
+				BD9C90452F7064DC00B8B20D /* Sources */,
+				BD9C90462F7064DC00B8B20D /* Frameworks */,
+				BD9C90472F7064DC00B8B20D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BD9C904E2F7064DC00B8B20D /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				BD9C904A2F7064DC00B8B20D /* GerritViewUnitTests */,
+			);
+			name = GerritViewUnitTests;
+			packageProductDependencies = (
+			);
+			productName = GerritViewUnitTests;
+			productReference = BD9C90492F7064DC00B8B20D /* GerritViewUnitTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -95,6 +188,14 @@
 				TargetAttributes = {
 					BD15DF742EA022DC001831C0 = {
 						CreatedOnToolsVersion = 26.0.1;
+					};
+					BD9C90392F7064D100B8B20D = {
+						CreatedOnToolsVersion = 26.0.1;
+						TestTargetID = BD15DF742EA022DC001831C0;
+					};
+					BD9C90482F7064DC00B8B20D = {
+						CreatedOnToolsVersion = 26.0.1;
+						TestTargetID = BD15DF742EA022DC001831C0;
 					};
 				};
 			};
@@ -113,12 +214,28 @@
 			projectRoot = "";
 			targets = (
 				BD15DF742EA022DC001831C0 /* GerritView */,
+				BD9C90392F7064D100B8B20D /* GerritViewUITests */,
+				BD9C90482F7064DC00B8B20D /* GerritViewUnitTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		BD15DF732EA022DC001831C0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BD9C90382F7064D100B8B20D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BD9C90472F7064DC00B8B20D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -135,7 +252,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BD9C90362F7064D100B8B20D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BD9C90452F7064DC00B8B20D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		BD9C90412F7064D100B8B20D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BD15DF742EA022DC001831C0 /* GerritView */;
+			targetProxy = BD9C90402F7064D100B8B20D /* PBXContainerItemProxy */;
+		};
+		BD9C904E2F7064DC00B8B20D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BD15DF742EA022DC001831C0 /* GerritView */;
+			targetProxy = BD9C904D2F7064DC00B8B20D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		BD15DF7E2EA022DE001831C0 /* Debug */ = {
@@ -339,6 +483,88 @@
 			};
 			name = Release;
 		};
+		BD9C90422F7064D100B8B20D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 78ZP55T8GD;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lineprinter.GerritViewUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = GerritView;
+			};
+			name = Debug;
+		};
+		BD9C90432F7064D100B8B20D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 78ZP55T8GD;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lineprinter.GerritViewUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = GerritView;
+			};
+			name = Release;
+		};
+		BD9C90502F7064DC00B8B20D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 78ZP55T8GD;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lineprinter.GerritViewUnitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GerritView.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/GerritView";
+			};
+			name = Debug;
+		};
+		BD9C90512F7064DC00B8B20D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 78ZP55T8GD;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lineprinter.GerritViewUnitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GerritView.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/GerritView";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -356,6 +582,24 @@
 			buildConfigurations = (
 				BD15DF812EA022DE001831C0 /* Debug */,
 				BD15DF822EA022DE001831C0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BD9C90442F7064D100B8B20D /* Build configuration list for PBXNativeTarget "GerritViewUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BD9C90422F7064D100B8B20D /* Debug */,
+				BD9C90432F7064D100B8B20D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BD9C904F2F7064DC00B8B20D /* Build configuration list for PBXNativeTarget "GerritViewUnitTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BD9C90502F7064DC00B8B20D /* Debug */,
+				BD9C90512F7064DC00B8B20D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
