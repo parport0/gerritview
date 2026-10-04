@@ -31,7 +31,9 @@ struct CommitFilesListView: View {
             all.formUnion(files.keys)
         }
         if let commentsByFile {
-            all.formUnion(commentsByFile.keys)
+            // Skip pseudo-paths like "/PATCHSET_LEVEL" that hold comments
+            // not attached to a file.
+            all.formUnion(commentsByFile.keys.filter { !$0.hasPrefix("/") })
         }
         return all.sorted()
     }
