@@ -149,7 +149,7 @@ struct AccountId: Hashable {
     let accountId: Int
 }
 
-public struct AccountInfo: Codable {
+public struct AccountInfo: Codable, Equatable {
     let accountId: Int?
     let name: String?
     let displayName: String?
@@ -181,7 +181,7 @@ public struct AccountInfo: Codable {
     }
 }
 
-public struct AvatarInfo: Codable {
+public struct AvatarInfo: Codable, Equatable {
     let url: String
     let height: Int?
     let width: Int?
@@ -567,7 +567,7 @@ public enum CommentSide: String, Codable {
     case parent = "PARENT"
 }
 
-public struct CommentRange: Codable {
+public struct CommentRange: Codable, Equatable {
     let startLine: Int
     let startCharacter: Int
     let endLine: Int
@@ -581,7 +581,7 @@ public struct CommentRange: Codable {
     }
 }
 
-public struct CommentInfo: Codable, Identifiable {
+public struct CommentInfo: Codable, Identifiable, Equatable {
     public let id: String
     let patchSet: Int?
     let path: String?
