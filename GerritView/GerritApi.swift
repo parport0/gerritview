@@ -163,7 +163,7 @@ public struct AccountInfo: Codable {
     let tags: [String]?
     
     func Name() -> String {
-        return displayName ?? name ?? username ?? name ?? String(accountId ?? 0)
+        return displayName ?? name ?? username ?? String(accountId ?? 0)
     }
     
     enum CodingKeys: String, CodingKey {
