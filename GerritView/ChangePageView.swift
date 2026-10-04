@@ -23,48 +23,47 @@ struct CommitFilesListView: View {
     let change: GerritChange
     let revision: String
     let files: [String: FileInfo]?
-    
+    let commentsByFile: [String: [CommentInfo]]?
+
+    private var paths: [String] {
+        var all = Set<String>()
+        if let files {
+            all.formUnion(files.keys)
+        }
+        if let commentsByFile {
+            all.formUnion(commentsByFile.keys)
+        }
+        return all.sorted()
+    }
+
+    private func threadCount(for path: String) -> Int {
+        return groupCommentThreads(commentsByFile?[path] ?? []).count
+    }
+
+    private func comments(for path: String) -> [CommentInfo] {
+        return commentsByFile?[path] ?? []
+    }
+
     var body: some View {
-        if files != nil {
-            let sortedKeys: [String] = files!.keys.sorted()
+        if files != nil || commentsByFile != nil {
+            let sortedPaths: [String] = paths
 
             VStack(alignment: .leading) {
-                    ForEach (sortedKeys, id: \.self) { key in
+                    ForEach (sortedPaths, id: \.self) { key in
                         NavigationLink(
                             destination: ChangeDiffView(
                                 changeId: change.tripletId,
                                 revisionId: revision,
-                                file: files![key]!,
-                                fileId: key
+                                fileId: key,
+                                comments: comments(for: key)
                             )
                         ) {
-                            VStack(alignment: .leading) {
-                                Text(key).font(.subheadline)
-                                HStack {
-                                    Text(files![key]?.status ?? "")
-                                    Spacer()
-
-                                    if files![key]?.binary != nil {
-                                        Text("binary \(String((files![key]?.sizeDelta)!))")
-                                            .foregroundStyle(
-                                                Color(uiColor: .secondaryLabel)
-                                            )
-                                            .font(.footnote)
-                                    } else {
-                                        Text(
-                                            "+\(String(files![key]?.linesInserted ?? 0))"
-                                        )
-                                        .foregroundStyle(.green)
-                                        .font(.subheadline)
-                                        Text(
-                                            "-\(String(files![key]?.linesDeleted ?? 0))"
-                                        )
-                                        .foregroundStyle(.red)
-                                        .font(.subheadline)
-                                    }
-                                }
-                            }
-                            if key != sortedKeys.last {
+                            CommitFileRowView(
+                                path: key,
+                                file: files?[key],
+                                commentThreadCount: threadCount(for: key)
+                            )
+                            if key != sortedPaths.last {
                                 Divider()
                             }
                         }
@@ -73,6 +72,46 @@ struct CommitFilesListView: View {
             .padding(4)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color(UIColor.secondarySystemBackground))
+        }
+    }
+}
+
+struct CommitFileRowView: View {
+    let path: String
+    let file: FileInfo?
+    let commentThreadCount: Int
+
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text(path).font(.subheadline)
+            HStack {
+                Text(file?.status ?? "")
+                Spacer()
+
+                if commentThreadCount > 0 {
+                    Image(systemName: "text.bubble").font(.footnote)
+                    Text(String(commentThreadCount)).font(.footnote)
+                }
+
+                if let file {
+                    if file.binary != nil {
+                        Text("binary \(String(file.sizeDelta))")
+                            .foregroundStyle(Color(uiColor: .secondaryLabel))
+                            .font(.footnote)
+                    } else {
+                        Text("+\(String(file.linesInserted ?? 0))")
+                            .foregroundStyle(.green)
+                            .font(.subheadline)
+                        Text("-\(String(file.linesDeleted ?? 0))")
+                            .foregroundStyle(.red)
+                            .font(.subheadline)
+                    }
+                } else {
+                    Text("no diff")
+                        .foregroundStyle(Color(uiColor: .secondaryLabel))
+                        .font(.footnote)
+                }
+            }
         }
     }
 }
@@ -378,7 +417,7 @@ struct ChangePageView: View {
             }
         case .failed(let error):
             Text(error.localizedDescription)
-        case .loaded(let change):
+        case .loaded(let change, let commentsByFile):
             ScrollView(.vertical) {
                 VStack(alignment: .leading) {
                     VStack(alignment: .leading, spacing: 2) {
@@ -410,7 +449,8 @@ struct ChangePageView: View {
                         CommitFilesListView(
                             change: change,
                             revision: currentRevision,
-                            files: currentRevisionContent.files
+                            files: currentRevisionContent.files,
+                            commentsByFile: commentsByFile
                         )
                     }
 

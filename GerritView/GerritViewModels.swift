@@ -141,7 +141,7 @@ func composeRevisionCommentsGerritUrl(settings: Settings, change: String, revisi
     enum State {
         case empty
         case failed(Error)
-        case loaded(GerritChange)
+        case loaded(GerritChange, [String: [CommentInfo]])
     }
     var state: State = State.empty
 
@@ -150,14 +150,24 @@ func composeRevisionCommentsGerritUrl(settings: Settings, change: String, revisi
             settings: settings,
             change: changeId
         )
+        let commentsUrl = composeRevisionCommentsGerritUrl(
+            settings: settings,
+            change: changeId,
+            revisionId: "current"
+        )
 
         do {
-            let (json, _) = try await URLSession.shared.data(from: queryUrl)
             //print(String(data: json, encoding: .utf8)!)
+            async let (changeJson, _) = URLSession.shared.data(from: queryUrl)
+            async let (commentsJson, _) = URLSession.shared.data(from: commentsUrl)
+            let (changeData, commentsData) = try await (changeJson, commentsJson)
             let change = try decodeGerritSingleChangeResponse(
-                from: String(data: json, encoding: .utf8)!
+                from: String(data: changeData, encoding: .utf8)!
             )
-            self.state = State.loaded(change!)
+            let commentsByFile = try decodeGerritRevisionCommentsResponse(
+                from: String(data: commentsData, encoding: .utf8)!
+            )
+            self.state = State.loaded(change!, commentsByFile)
         } catch {
             let nsError = error as NSError
 

@@ -1,18 +1,15 @@
 import SwiftUI
 
-enum diffContentSide {
-    case deleted
-    case added
-    case unchanged
-}
-
 class DiffScrollViewController: UIViewController {
-    @Binding var model: GerritFileDiffViewModel
+    let entries: [DiffEntry]
 
-    var textView: UITextView = UITextView()
+    private let lineFont = UIFont.monospacedSystemFont(
+        ofSize: UIFont.smallSystemFontSize,
+        weight: .medium
+    )
 
-    init(model: Binding<GerritFileDiffViewModel>) {
-        self._model = model
+    init(entries: [DiffEntry]) {
+        self.entries = entries
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -20,61 +17,88 @@ class DiffScrollViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    private func lineColor(_ line: DiffLine) -> UIColor {
+        switch (line.beforeNumber, line.afterNumber) {
+        case (.some, .none):
+            return UIColor(red: 0.7, green: 0.3, blue: 0.3, alpha: 1.0)
+        case (.none, .some):
+            return UIColor(red: 0.3, green: 0.7, blue: 0.3, alpha: 1.0)
+        default:
+            return .label
+        }
+    }
+
+    private func commentAttributedText(
+        _ thread: CommentThread,
+        background: UIColor
+    ) -> NSAttributedString {
+        let result = NSMutableAttributedString()
+        let bodyFont = UIFont.systemFont(ofSize: UIFont.smallSystemFontSize)
+        let headerFont = UIFont.boldSystemFont(ofSize: UIFont.smallSystemFontSize)
+
+        for comment in thread.comments {
+            let side = comment.effectiveSide == .parent ? "before" : "after"
+            let place = comment.isFileComment ? "file" : "\(side) line \(comment.endLine!)"
+            let unresolvedMark = (comment.unresolved ?? false) ? "● " : ""
+            let header = "\(unresolvedMark)\(comment.author?.Name() ?? "Unknown") · \(place)\n"
+            result.append(NSAttributedString(
+                string: header,
+                attributes: [
+                    .font: headerFont,
+                    .foregroundColor: UIColor.secondaryLabel,
+                    .backgroundColor: background
+                ]
+            ))
+            result.append(NSAttributedString(
+                string: (comment.message ?? "") + "\n",
+                attributes: [
+                    .font: bodyFont,
+                    .foregroundColor: UIColor.label,
+                    .backgroundColor: background
+                ]
+            ))
+        }
+        return result
+    }
+
     private func generateTextView() -> UITextView {
         let summedText: NSMutableAttributedString = NSMutableAttributedString()
 
-        switch model.state {
-        case .loaded(let diff):
-            for c in diff.content {
-                if c.a != nil {
-                    summedText.append(
-                        NSAttributedString(
-                            string: c.a!.joined(separator: "\n") + "\n",
-                            attributes: [
-                                         .font: UIFont.monospacedSystemFont(
-                                            ofSize: UIFont.smallSystemFontSize,
-                                            weight: .medium
-                                         ),
-                                         .foregroundColor: UIColor.init(
-                                            red: 0.7,
-                                            green: 0.3,
-                                            blue: 0.3,
-                                            alpha: 1.0)]
-                        )
+        for entry in entries {
+            switch entry {
+            case .line(let line):
+                summedText.append(NSAttributedString(
+                    string: line.text + "\n",
+                    attributes: [.font: lineFont, .foregroundColor: lineColor(line)]
+                ))
+            case .skippedLines(_, _, let count):
+                summedText.append(NSAttributedString(
+                    string: "· · · \(count) hidden lines · · ·\n",
+                    attributes: [
+                        .font: lineFont,
+                        .foregroundColor: UIColor.tertiaryLabel,
+                        .obliqueness: 0.3
+                    ]
+                ))
+            case .comments(let thread):
+                let unresolved = thread.comments.last?.unresolved ?? false
+                let background = unresolved
+                    ? UIColor.systemYellow.withAlphaComponent(0.25)
+                    : UIColor.secondarySystemBackground
+
+                let commentText = NSMutableAttributedString()
+                commentText.append(NSAttributedString(string: "\n", attributes: [.font: lineFont]))
+                commentText.append(commentAttributedText(thread, background: background))
+                commentText.append(NSAttributedString(string: "\n", attributes: [.font: lineFont]))
+                summedText.append(commentText)
+                summedText.addAttributes(
+                    [.backgroundColor: background],
+                    range: NSRange(
+                        location: summedText.length - commentText.length,
+                        length: commentText.length
                     )
-                }
-                if c.b != nil {
-                    summedText.append(
-                        NSAttributedString(
-                            string: c.b!.joined(separator: "\n") + "\n",
-                            attributes: [
-                                .font: UIFont.monospacedSystemFont(
-                                            ofSize: UIFont.smallSystemFontSize,
-                                            weight: .medium
-                                         ),
-                                         .foregroundColor: UIColor.init(
-                                            red: 0.3,
-                                            green: 0.7,
-                                            blue: 0.3,
-                                            alpha: 1.0
-                                         )
-                                ]
-                        )
-                    )
-                }
-                if c.ab != nil {
-                    summedText.append(
-                        NSAttributedString(
-                            string: c.ab!.joined(separator: "\n") + "\n",
-                            attributes: [.font: UIFont.monospacedSystemFont(
-                                            ofSize: UIFont.smallSystemFontSize,
-                                            weight: .medium
-                            ), .foregroundColor: UIColor.label]
-                        )
-                    )
-                }
+                )
             }
-        default: break
         }
 
         let textView = UITextView(usingTextLayoutManager: true)
@@ -92,48 +116,34 @@ class DiffScrollViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.textView = generateTextView()
-        view.addSubview(self.textView)
+        self.view.backgroundColor = .secondarySystemGroupedBackground
+        let textView = generateTextView()
+        view.addSubview(textView)
+        self.textView = textView
         self.textView.frame = view.frame
     }
+
+    private var textView: UITextView = UITextView()
 }
 
 struct DiffScrollViewControllerRepresentable: UIViewControllerRepresentable {
-    @Binding var model: GerritFileDiffViewModel
-    typealias UIViewControllerType = UIViewController
-
-    var controller: UIViewController
-
-    init(model: Binding<GerritFileDiffViewModel>) {
-        self._model = model
-        controller = DiffScrollViewController(model: self._model)
-    }
+    let entries: [DiffEntry]
 
     func makeUIViewController(context: Context) -> UIViewController {
-        let size = controller.view.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
-        controller.preferredContentSize = size
-
-        return controller
+        return DiffScrollViewController(entries: entries)
     }
 
     func updateUIViewController(
         _ uiViewController: UIViewController,
         context: Context
     ) {}
-
-    class Coordinator: NSObject {
-    }
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
-    }
 }
 
 struct ChangeDiffView: View {
     let changeId: String
     let revisionId: String
-    let file: FileInfo
     let fileId: String
+    let comments: [CommentInfo]
 
     @State private var gerritDiffModel = GerritFileDiffViewModel()
     @Environment(Settings.self) var settings: Settings
@@ -168,7 +178,12 @@ struct ChangeDiffView: View {
                 .background(
                     Color(UIColor.systemGroupedBackground)
                 )
-                DiffScrollViewControllerRepresentable(model: $gerritDiffModel)
+                DiffScrollViewControllerRepresentable(
+                    entries: interleaveComments(
+                        entries: expandDiffLines(diff),
+                        comments: comments
+                    )
+                )
             }
         }
     }
