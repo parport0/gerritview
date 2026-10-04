@@ -89,6 +89,17 @@ func composeFileDiffGerritUrl(settings: Settings, change: String, revisionId: St
     return url
 }
 
+func composeRevisionCommentsGerritUrl(settings: Settings, change: String, revisionId: String) -> URL {
+    var (url, queryItems) = composeCommonPartOfGerritUrl(settings: settings)
+
+    var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)!
+    urlComponents.percentEncodedPath = url.path() + "/changes/" + change + "/revisions/" + revisionId + "/comments"
+    url = urlComponents.url!
+
+    url.append(queryItems: queryItems)
+    return url
+}
+
 @Observable class GerritFileDiffViewModel {
     enum State {
         case empty

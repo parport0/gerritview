@@ -562,6 +562,67 @@ public enum LabelStatus: String, Codable {
     case impossible = "IMPOSSIBLE"
 }
 
+public enum CommentSide: String, Codable {
+    case revision = "REVISION"
+    case parent = "PARENT"
+}
+
+public struct CommentRange: Codable {
+    let startLine: Int
+    let startCharacter: Int
+    let endLine: Int
+    let endCharacter: Int
+
+    enum CodingKeys: String, CodingKey {
+        case startLine = "start_line"
+        case startCharacter = "start_character"
+        case endLine = "end_line"
+        case endCharacter = "end_character"
+    }
+}
+
+public struct CommentInfo: Codable, Identifiable {
+    public let id: String
+    let patchSet: Int?
+    let path: String?
+    let side: CommentSide?
+    let parentNumber: Int?
+    let line: Int?
+    let range: CommentRange?
+    let inReplyTo: String?
+    let message: String?
+    let updated: String
+    let author: AccountInfo?
+    let tag: String?
+    let unresolved: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case patchSet = "patch_set"
+        case path
+        case side
+        case parentNumber = "parent"
+        case line
+        case range
+        case inReplyTo = "in_reply_to"
+        case message
+        case updated
+        case author
+        case tag
+        case unresolved
+    }
+
+    // side defaults to REVISION when unset
+    public var effectiveSide: CommentSide {
+        return side ?? .revision
+    }
+
+    // nil for file comments
+    public var endLine: Int? {
+        return range?.endLine ?? line
+    }
+}
+
 public struct DiffInfo: Codable {
     let metaA: DiffFileMetaInfo?
     let metaB: DiffFileMetaInfo?
@@ -695,6 +756,22 @@ public func decodeGerritSingleChangeResponse(from jsonString: String) throws -> 
     let change = try decoder.decode(GerritChange.self, from: jsonData)
 
     return change
+}
+
+public func decodeGerritRevisionCommentsResponse(from jsonString: String) throws -> [String: [CommentInfo]] {
+    // To prevent against Cross Site Script Inclusion (XSSI) attacks, the JSON
+    // response body starts with a magic prefix line that must be stripped before
+    // feeding the rest of the response body to a JSON parser:
+    let cleanedJsonString = jsonString.replacingOccurrences(of: ")]}'\n", with: "")
+
+    guard let jsonData = cleanedJsonString.data(using: .utf8) else {
+        return [:]
+    }
+
+    let decoder = setupJsonDecoder()
+    let comments = try decoder.decode([String: [CommentInfo]].self, from: jsonData)
+
+    return comments
 }
 
 public func decodeGerritFileDiffResponse(from jsonString: String) throws -> DiffInfo? {
