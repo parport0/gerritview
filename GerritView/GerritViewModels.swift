@@ -72,8 +72,12 @@ func composeSingleChangeGerritUrl(settings: Settings, change: String) -> URL {
     return url
 }
 
-func composeFileDiffGerritUrl(settings: Settings, change: String, revisionId: String, fileId: String) -> URL {
+func composeFileDiffGerritUrl(settings: Settings, change: String, revisionId: String, fileId: String, parentNumber: Int? = nil) -> URL {
     var (url, queryItems) = composeCommonPartOfGerritUrl(settings: settings)
+
+    if let parentNumber {
+        queryItems.append(URLQueryItem(name: "parent", value: String(parentNumber)))
+    }
 
     var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)!
     var characterSet = CharacterSet.urlPathAllowed
@@ -108,12 +112,13 @@ func composeRevisionCommentsGerritUrl(settings: Settings, change: String, revisi
     }
     var state: State = State.empty
 
-    func fetchDiff(settings: Settings, changeId: String, revisionId: String, fileId: String) async {
+    func fetchDiff(settings: Settings, changeId: String, revisionId: String, fileId: String, parentNumber: Int? = nil) async {
         let queryUrl = composeFileDiffGerritUrl(
             settings: settings,
             change: changeId,
             revisionId: revisionId,
-            fileId: fileId
+            fileId: fileId,
+            parentNumber: parentNumber
         )
 
         do {

@@ -37,7 +37,9 @@ class DiffScrollViewController: UIViewController {
         let headerFont = UIFont.boldSystemFont(ofSize: UIFont.smallSystemFontSize)
 
         for comment in thread.comments {
-            let side = comment.effectiveSide == .parent ? "before" : "after"
+            let side = comment.effectiveSide == .parent
+                ? (comment.parentNumber.map { "parent \($0)" } ?? "before")
+                : "after"
             let place = comment.isFileComment ? "file" : "\(side) line \(comment.endLine!)"
             let unresolvedMark = (comment.unresolved ?? false) ? "● " : ""
             let header = "\(unresolvedMark)\(comment.author?.Name() ?? "Unknown") · \(place)\n"
@@ -160,7 +162,8 @@ struct ChangeDiffView: View {
                             settings: settings,
                             changeId: changeId,
                             revisionId: String(revisionId),
-                            fileId: fileId
+                            fileId: fileId,
+                            parentNumber: diffParentNumber(for: comments)
                         )
                 }
         case .failed(let error):

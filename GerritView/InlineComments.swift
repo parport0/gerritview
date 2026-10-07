@@ -113,6 +113,17 @@ extension CommentInfo {
     }
 }
 
+// The parent commit the comments belong to, for merge commits. Comments on
+// the revision side or the auto-merge tree need no specific parent diff.
+func diffParentNumber(for comments: [CommentInfo]) -> Int? {
+    for comment in comments where comment.effectiveSide == .parent {
+        if let parent = comment.parentNumber {
+            return parent
+        }
+    }
+    return nil
+}
+
 extension CommentThread {
     // The comment that anchors the thread's position in the diff.
     var anchor: CommentInfo? {

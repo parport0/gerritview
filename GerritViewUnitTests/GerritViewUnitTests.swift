@@ -5,6 +5,7 @@
 //  Created by liney on 2026-03-22.
 //
 
+import Foundation
 import Testing
 @testable import GerritView
 
@@ -88,6 +89,18 @@ struct GerritApiTests {
         )
         #expect(commentsByFile.isEmpty)
     }
+
+    @Test func decodeMergeCommitCommentParent() throws {
+        let commentsByFile = try decodeGerritRevisionCommentsResponse(
+            from: ")]}'\n"
+            + "{\"f.txt\": [{\"id\": \"c1\", \"side\": \"PARENT\", \"parent\": 2,"
+            + " \"line\": 3, \"updated\": \"2024-01-01 10:00:00.000000000\","
+            + " \"message\": \"m\"}]}"
+        )
+        let comment = commentsByFile["f.txt"]![0]
+        #expect(comment.parentNumber == 2)
+        #expect(comment.effectiveSide == .parent)
+    }
 }
 
 struct InlineCommentsTests {
@@ -96,6 +109,7 @@ struct InlineCommentsTests {
         line: Int? = nil,
         range: CommentRange? = nil,
         side: CommentSide? = nil,
+        parent: Int? = nil,
         reply: String? = nil,
         updated: String = "2024-01-01 10:00:00.000000000",
         message: String = "msg"
@@ -105,7 +119,7 @@ struct InlineCommentsTests {
             patchSet: 1,
             path: nil,
             side: side,
-            parentNumber: nil,
+            parentNumber: parent,
             line: line,
             range: range,
             inReplyTo: reply,
@@ -252,6 +266,53 @@ struct InlineCommentsTests {
         #expect(result.count == 5)
         #expect(commentId(of: result[2]) == "before")
         #expect(commentId(of: result[3]) == "after")
+    }
+
+    @Test func parentNumberPickedFromParentCommentsOnly() {
+        #expect(diffParentNumber(for: []) == nil)
+        #expect(diffParentNumber(for: [comment(id: "r", line: 1)]) == nil)
+        #expect(diffParentNumber(for: [comment(id: "p", line: 1, side: .parent)]) == nil)
+        #expect(diffParentNumber(for: [
+            comment(id: "r", line: 1),
+            comment(id: "p", line: 1, side: .parent)
+        ]) == nil)
+        #expect(diffParentNumber(for: [
+            comment(id: "r", line: 1),
+            comment(id: "p", line: 1, side: .parent, parent: 2)
+        ]) == 2)
+    }
+
+    @Test func mergeCommitCommentAnchorsOnParentSideOfItsDiff() {
+        let entries = expandDiffLines(diff([ab(["l1", "l2", "l3"])]))
+        let result = interleaveComments(entries: entries, comments: [
+            comment(id: "m", line: 2, side: .parent, parent: 2)
+        ])
+        #expect(commentId(of: result[2]) == "m")
+    }
+}
+
+struct DiffUrlTests {
+    let settings = Settings()
+
+    private func parentQueryItem(of url: URL) -> String? {
+        return URLComponents(url: url, resolvingAgainstBaseURL: false)!
+            .queryItems!
+            .first { $0.name == "parent" }?
+            .value
+    }
+
+    @Test func parentParamAddedWhenSet() {
+        let url = composeFileDiffGerritUrl(
+            settings: settings, change: "c", revisionId: "1", fileId: "f.txt", parentNumber: 2
+        )
+        #expect(parentQueryItem(of: url) == "2")
+    }
+
+    @Test func noParentParamByDefault() {
+        let url = composeFileDiffGerritUrl(
+            settings: settings, change: "c", revisionId: "1", fileId: "f.txt"
+        )
+        #expect(parentQueryItem(of: url) == nil)
     }
 }
 
