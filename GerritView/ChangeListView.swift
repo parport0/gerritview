@@ -53,6 +53,7 @@ struct ChangeListView: View {
     
     var body: some View {
         @Bindable var settings = settings
+        ScrollViewReader { proxy in
             List {
                 ForEach($gerritChangesModel.changes) { $change in
                     NavigationLink(
@@ -63,12 +64,28 @@ struct ChangeListView: View {
                         ChangeRowView(change: change)
                     }
                 }
-                ProgressView()
-                    .task { await self.gerritChangesModel.fetchChanges(settings: settings, query: searchText, more: true) }
+                if gerritChangesModel.hasMore {
+                    ProgressView()
+                        .task { await self.gerritChangesModel.fetchChanges(settings: settings, query: queryText, more: true) }
+                }
             }
             .listStyle(.plain)
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        if let first = gerritChangesModel.changes.first {
+                            proxy.scrollTo(first.id, anchor: .top)
+                        }
+                        Task {
+                            await self.gerritChangesModel.fetchChanges(settings: settings, query: queryText, more: false)
+                        }
+                    } label: {
+                        Image(systemName: "arrow.counterclockwise")
+                    }
+                }
+            }
             .refreshable {
-                await self.gerritChangesModel.fetchChanges(settings: settings, query: searchText, more: false)
+                await self.gerritChangesModel.fetchChanges(settings: settings, query: queryText, more: false)
             }
             .searchable(text: $searchText)
             .disableAutocorrection(true)
@@ -77,10 +94,11 @@ struct ChangeListView: View {
                 queryText = searchText
                 gerritChangesModel.clearChanges()
             }
-        .alert("Communication failure", isPresented: $gerritChangesModel.showAlert, presenting: gerritChangesModel.errorMessage) { _ in
-            Button("Dismiss") {  }
-        } message: { details in
-            Text(details)
+            .alert("Communication failure", isPresented: $gerritChangesModel.showAlert, presenting: gerritChangesModel.errorMessage) { _ in
+                Button("Dismiss") {  }
+            } message: { details in
+                Text(details)
+            }
         }
     }
 }

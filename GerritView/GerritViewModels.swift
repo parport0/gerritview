@@ -193,10 +193,12 @@ func composeRevisionCommentsGerritUrl(settings: Settings, change: String, revisi
     var errorMessage = ""
     var fetched = 0
     let loadCount = 10
+    var hasMore = true
 
     func clearChanges() {
         self.fetched = 0
         self.changes = []
+        self.hasMore = true
     }
 
     func fetchChanges(settings: Settings, query: String?, more: Bool) async {
@@ -219,6 +221,7 @@ func composeRevisionCommentsGerritUrl(settings: Settings, change: String, revisi
             if (!more) {
                 self.clearChanges()
             }
+            self.hasMore = newChanges.last?.moreChanges ?? false
             let allChanges = self.changes + newChanges
             var alreadyThere = Set<String>()
             self.changes = allChanges.compactMap { (
