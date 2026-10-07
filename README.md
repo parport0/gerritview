@@ -20,7 +20,7 @@ I really wanted to see the statuses of changes from the change list on mobile. G
 * [x] Show the comments, including inline ones
 * An easy way to scroll to the top of the change list --- to refresh the list, for example
 * Fetch and use the search filter presets from Gerrit (seen in "Settings" -> "Menu"), OR a way to save the search filters in the app (not as cool)
-* Vote icons as colored letters (like "CR" letters in a green circle, instead of "Code-Review ✅")
+* [x] Vote icons as colored letters (like "CR" letters in a green circle, instead of "Code-Review ✅")
 * Hide/show previous patchset comments
 * [x] Comments under changes should probably be shown in reverse order on mobile (less scroll = good)
 * [x] Show that changes have unresolved comments as an icon

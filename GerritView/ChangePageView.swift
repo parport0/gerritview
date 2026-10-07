@@ -147,6 +147,39 @@ struct PatchsetCommentsView: View {
     }
 }
 
+struct RequirementBadgeView: View {
+    let name: String
+    let status: SubmitRequirementResultStatus
+
+    private var initials: String {
+        return name.split(whereSeparator: { $0 == " " || $0 == "-" })
+            .prefix(2)
+            .compactMap { $0.first }
+            .map { String($0).uppercased() }
+            .joined()
+    }
+
+    private var color: Color {
+        switch status {
+        case .satisfied, .overridden, .forced:
+            return .green
+        case .unsatisfied, .error:
+            return .red
+        case .notApplicable:
+            return .gray
+        }
+    }
+
+    var body: some View {
+        Text(initials)
+            .font(.caption).fontWeight(.bold)
+            .minimumScaleFactor(0.5)
+            .foregroundColor(.white)
+            .frame(width: 26, height: 26)
+            .background(color, in: Circle())
+    }
+}
+
 struct VotePillInfo: Hashable, Identifiable {
     let id = UUID()
     let label: String
@@ -467,8 +500,7 @@ struct ChangePageView: View {
                                     requirement.status != .notApplicable
                                 ) {
                                     HStack {
-                                        requirementIcon(status: requirement.status)
-                                            .font(.subheadline)
+                                        RequirementBadgeView(name: requirement.name, status: requirement.status)
                                         Text(requirement.name)
                                             .font(.subheadline)
                                         Spacer()
@@ -499,24 +531,6 @@ struct ChangePageView: View {
                     .fetchChange(settings: settings, changeId: changeId)
             }
         }
-    }
-}
-
-@ViewBuilder func requirementIcon(status: SubmitRequirementResultStatus) -> some View {
-    switch status {
-    case .satisfied:
-        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-    case .unsatisfied:
-        Image(systemName: "x.circle.fill").foregroundStyle(.red)
-    case .forced:
-        Image(systemName: "checkmark.circle.trianglebadge.exclamationmark.fill").foregroundStyle(.green)
-    case .overridden:
-        Image(systemName: "checkmark.shield.fill").foregroundStyle(.green)
-    case .error:
-        Image(systemName: "questionmark.circle.fill")
-            .foregroundStyle(.red)
-    case .notApplicable:
-        Image(systemName: "circle.fill")
     }
 }
 

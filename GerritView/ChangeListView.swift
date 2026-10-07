@@ -31,10 +31,7 @@ struct ChangeRowView: View {
                         ) {
                             HStack {
                                 Spacer()
-                                Text(requirement.name)
-                                    .font(.subheadline)
-                                requirementIcon(status: requirement.status)
-                                    .font(.subheadline)
+                                RequirementBadgeView(name: requirement.name, status: requirement.status)
                             }
                         }
                     }
