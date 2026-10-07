@@ -290,27 +290,26 @@ struct CommentText: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            // Show vote pills above comment
-            if !votePills.isEmpty {
-                HStack(spacing: 4) {
-                    ForEach(votePills) { pill in
-                        VotePillView(labelName: pill.label, value: pill.value)
+        CommentTextViewRepresentable(message: self.message, calculatedHeight: $dynamicHeight)
+            .frame(
+                minHeight: dynamicHeight,
+                maxHeight: dynamicHeight
+            )
+            .overlay(alignment: .topTrailing) {
+                // Vote badge pinned to the comment, like on Gerrit web
+                if !votePills.isEmpty {
+                    HStack(spacing: 4) {
+                        ForEach(votePills) { pill in
+                            VotePillView(labelName: pill.label, value: pill.value)
+                        }
                     }
+                    .padding(2)
                 }
             }
-
-            // Comment text (with pills stripped from text)
-            CommentTextViewRepresentable(message: self.message, calculatedHeight: $dynamicHeight)
-                .frame(
-                    minHeight: dynamicHeight,
-                    maxHeight: dynamicHeight
-                )
-        }
-        .onAppear {
-            let (_, pills) = message.message.extractGerritVotePrefix()
-            votePills = pills
-        }
+            .onAppear {
+                let (_, pills) = message.message.extractGerritVotePrefix()
+                votePills = pills
+            }
     }
 }
 

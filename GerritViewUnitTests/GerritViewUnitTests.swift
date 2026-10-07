@@ -127,6 +127,40 @@ struct HttpErrorTests {
     }
 }
 
+struct VotePrefixTests {
+    @Test func votePillsExtractedAndPrefixStripped() {
+        let (cleaned, pills) = "Patch Set 1: Code-Review+1\n\nLooks good to me".extractGerritVotePrefix()
+        #expect(pills.count == 1)
+        #expect(pills[0].label == "Code-Review")
+        #expect(pills[0].value == 1)
+        #expect(cleaned == "\nLooks good to me")
+    }
+
+    @Test func multipleVotePillsExtracted() {
+        let (_, pills) = "Patch Set 3: Verified+1 Code-Review+2".extractGerritVotePrefix()
+        #expect(pills.map { $0.label } == ["Verified", "Code-Review"])
+        #expect(pills.map { $0.value } == [1, 2])
+    }
+
+    @Test func regularMessageUntouched() {
+        let (cleaned, pills) = "Uploaded patch set 1.".extractGerritVotePrefix()
+        #expect(pills.isEmpty)
+        #expect(cleaned == "Uploaded patch set 1.")
+    }
+
+    @Test func voteHeaderWithoutVotesKeptIntact() {
+        let (cleaned, pills) = "Patch Set 1: Abandoned".extractGerritVotePrefix()
+        #expect(pills.isEmpty)
+        #expect(cleaned == "Patch Set 1: Abandoned")
+    }
+
+    @Test func cherryPickHeaderNotAVote() {
+        let (cleaned, pills) = "Patch Set 2: Cherry Picked from branch x".extractGerritVotePrefix()
+        #expect(pills.isEmpty)
+        #expect(cleaned.contains("Cherry Picked"))
+    }
+}
+
 struct InlineCommentsTests {
     func comment(
         id: String,

@@ -24,7 +24,7 @@ I really wanted to see the statuses of changes from the change list on mobile. G
 * [x] Hide/show previous patchset comments
 * [x] Comments under changes should probably be shown in reverse order on mobile (less scroll = good)
 * [x] Show that changes have unresolved comments as an icon
-* Maybe a nicer way to show comments-that-are-votes (like on Gerrit web, a comment with a Code-Review+1 vote will show a green badge on the comment)
+* [x] Maybe a nicer way to show comments-that-are-votes (like on Gerrit web, a comment with a Code-Review+1 vote will show a green badge on the comment)
 * Some event view would be nice? Checking latest Gerrit updates from the email inbox is unpleasant on mobile
 * FIX AUTH to not use a hardcoded realm name. Needs a URLSession delegate to be set I suppose
 * Find a good icon for the app
