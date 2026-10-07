@@ -118,6 +118,35 @@ struct CommitFileRowView: View {
     }
 }
 
+struct PatchsetCommentsView: View {
+    let threads: [CommentThread]
+
+    var body: some View {
+        if !threads.isEmpty {
+            VStack(alignment: .leading) {
+                Text("Patchset comments").font(.headline)
+                ForEach(threads, id: \.comments.first?.id) { thread in
+                    ForEach(thread.comments, id: \.id) { comment in
+                        VStack(alignment: .leading) {
+                            HStack {
+                                Text(comment.author?.Name() ?? "Unknown").font(.footnote)
+                                if let patchSet = comment.patchSet {
+                                    Text("PS\(patchSet)").font(.footnote)
+                                }
+                                Text(String(comment.updated.prefix(19))).font(.footnote)
+                            }
+                            Text(verbatim: comment.message ?? "").font(.footnote)
+                        }
+                    }
+                }
+            }
+            .padding(4)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(UIColor.secondarySystemBackground))
+        }
+    }
+}
+
 struct VotePillInfo: Hashable, Identifiable {
     let id = UUID()
     let label: String
@@ -454,6 +483,7 @@ struct ChangePageView: View {
                             files: currentRevisionContent.files,
                             commentsByFile: commentsByFile
                         )
+                        PatchsetCommentsView(threads: patchsetLevelThreads(commentsByFile))
                     }
 
                     CommitCommentsListView(comments: change.messages)

@@ -106,6 +106,11 @@ func groupCommentThreads(_ comments: [CommentInfo]) -> [CommentThread] {
     }
 }
 
+// Threads rooted on the patch set instead of a file (the "/PATCHSET_LEVEL" pseudo-path).
+func patchsetLevelThreads(_ commentsByFile: [String: [CommentInfo]]) -> [CommentThread] {
+    return groupCommentThreads(commentsByFile["/PATCHSET_LEVEL"] ?? [])
+}
+
 extension CommentInfo {
     // A file comment has neither a line nor a range (or line 0, as used by drafts).
     var isFileComment: Bool {

@@ -282,6 +282,24 @@ struct InlineCommentsTests {
         ]) == 2)
     }
 
+    @Test func patchsetLevelThreadsPulledFromPseudoPath() {
+        let commentsByFile = [
+            "f.txt": [comment(id: "f1", line: 1)],
+            "/PATCHSET_LEVEL": [
+                comment(id: "p1", updated: "2024-01-01 10:00:00.000000000"),
+                comment(id: "p2", reply: "p1", updated: "2024-01-01 11:00:00.000000000")
+            ]
+        ]
+        let threads = patchsetLevelThreads(commentsByFile)
+        #expect(threads.count == 1)
+        #expect(threads[0].comments.map { $0.id } == ["p1", "p2"])
+    }
+
+    @Test func patchsetLevelThreadsEmptyWithoutPseudoPath() {
+        #expect(patchsetLevelThreads(["f.txt": [comment(id: "f1")]]).isEmpty)
+        #expect(patchsetLevelThreads([:]).isEmpty)
+    }
+
     @Test func mergeCommitCommentAnchorsOnParentSideOfItsDiff() {
         let entries = expandDiffLines(diff([ab(["l1", "l2", "l3"])]))
         let result = interleaveComments(entries: entries, comments: [
