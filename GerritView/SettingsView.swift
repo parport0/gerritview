@@ -32,6 +32,12 @@ internal import Combine
     var gerritPassword: String {
         didSet { storage.gerritPassword = gerritPassword }
     }
+
+    // Saved search queries; the view mirrors this into local state.
+    var savedFilters: [String] {
+        get { UserDefaults.standard.stringArray(forKey: "settingsSavedFilters") ?? [] }
+        set { UserDefaults.standard.set(newValue, forKey: "settingsSavedFilters") }
+    }
     
     init() {
         gerritUrl = storage.gerritUrl

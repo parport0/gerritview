@@ -50,7 +50,24 @@ struct ChangeListView: View {
     @Environment(Settings.self) var settings: Settings
     @State private var searchText = ""
     @State private var queryText = ""
-    
+    @State private var savedFilters: [String] = UserDefaults.standard.stringArray(forKey: "settingsSavedFilters") ?? []
+    @State private var showingQueryDeletion = false
+
+    private func applySavedFilter(_ filter: String) {
+        searchText = filter
+        queryText = filter
+        gerritChangesModel.clearChanges()
+        Task {
+            await self.gerritChangesModel.fetchChanges(settings: settings, query: filter, more: false)
+        }
+    }
+
+    private func saveCurrentQuery() {
+        guard !queryText.isEmpty, !savedFilters.contains(queryText) else { return }
+        savedFilters.append(queryText)
+        settings.savedFilters = savedFilters
+    }
+
     var body: some View {
         @Bindable var settings = settings
         ScrollViewReader { proxy in
@@ -70,6 +87,9 @@ struct ChangeListView: View {
                 }
             }
             .listStyle(.plain)
+            .navigationDestination(isPresented: $showingQueryDeletion) {
+                SavedQueriesView(savedFilters: $savedFilters)
+            }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
@@ -81,6 +101,28 @@ struct ChangeListView: View {
                         }
                     } label: {
                         Image(systemName: "arrow.counterclockwise")
+                    }
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button("Save current query", systemImage: "bookmark.plus") {
+                            saveCurrentQuery()
+                        }
+                        .disabled(queryText.isEmpty)
+                        Section("Saved queries") {
+                            ForEach(savedFilters, id: \.self) { filter in
+                                Button(filter) {
+                                    applySavedFilter(filter)
+                                }
+                            }
+                        }
+                        if !savedFilters.isEmpty {
+                            Button("Delete saved queries...", systemImage: "trash") {
+                                showingQueryDeletion = true
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "bookmark")
                     }
                 }
             }
@@ -109,5 +151,29 @@ struct ChangeListView: View {
                 Text(details)
             }
         }
+    }
+}
+
+struct SavedQueriesView: View {
+    @Binding var savedFilters: [String]
+    @Environment(Settings.self) var settings: Settings
+
+    var body: some View {
+        List {
+            ForEach(savedFilters, id: \.self) { filter in
+                HStack {
+                    Text(filter)
+                    Spacer()
+                    Button {
+                        savedFilters.removeAll { $0 == filter }
+                        settings.savedFilters = savedFilters
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .buttonStyle(.borderless)
+                }
+            }
+        }
+        .navigationTitle("Delete saved queries")
     }
 }
