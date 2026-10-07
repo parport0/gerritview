@@ -406,6 +406,26 @@ struct InlineCommentsTests {
     }
 }
 
+struct AvatarTests {
+    @Test func absoluteAvatarURLKept() {
+        #expect(avatarURL("https://example.com/a.png", baseURL: "https://gerrit")?.absoluteString == "https://example.com/a.png")
+    }
+
+    @Test func relativeAvatarURLResolvedAgainstBase() {
+        #expect(avatarURL("/accounts/1/avatar", baseURL: "https://gerrit")?.absoluteString == "https://gerrit/accounts/1/avatar")
+    }
+
+    @Test func avatarCacheNameStableAndDistinct() {
+        let a = avatarCacheFileName(for: URL(string: "https://gerrit/1.png")!)
+        let b = avatarCacheFileName(for: URL(string: "https://gerrit/1.png")!)
+        let c = avatarCacheFileName(for: URL(string: "https://gerrit/2.png")!)
+        #expect(a == b)
+        #expect(a != c)
+        #expect(a.count == 64)
+        #expect(a.allSatisfy { $0.isHexDigit })
+    }
+}
+
 struct DiffUrlTests {
     let settings = Settings()
 

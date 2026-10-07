@@ -9,6 +9,7 @@ internal import Combine
         @AppStorage("settingsGerritCookie") var gerritCookie: String = ""
         @AppStorage("settingsGerritUsername") var gerritUsername: String = ""
         @AppStorage("settingsGerritPassword") var gerritPassword: String = ""
+        @AppStorage("settingsShowUserpics") var showUserpics: Bool = false
 
     }
     
@@ -32,6 +33,9 @@ internal import Combine
     var gerritPassword: String {
         didSet { storage.gerritPassword = gerritPassword }
     }
+    var showUserpics: Bool {
+        didSet { storage.showUserpics = showUserpics }
+    }
 
     // Saved search queries; the view mirrors this into local state.
     var savedFilters: [String] {
@@ -46,6 +50,7 @@ internal import Combine
         gerritCookie = storage.gerritCookie
         gerritUsername = storage.gerritUsername
         gerritPassword = storage.gerritPassword
+        showUserpics = storage.showUserpics
     }
 }
 
@@ -100,6 +105,11 @@ struct SettingsView: View {
                         "To obtain the cookie, navigate to \"HTTP Credentials\" in your Gerrit profile settings. Click \"Obtain password\". Paste only the field after \",o,\".\nFor example, android.googlesource.com,FALSE,/,TRUE,2147483647,o,**git-example.example.com=1//0321FooBaarBaaazz**..."
                     )
                 }
+            }
+            Section {
+                Toggle("Show userpics", systemImage: "person.crop.circle", isOn: $settings.showUserpics)
+            } header: {
+                Text("Appearance")
             }
         }
     }

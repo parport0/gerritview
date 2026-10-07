@@ -35,7 +35,7 @@ I really wanted to see the statuses of changes from the change list on mobile. G
 * Fix the constraint conflict that gets logged when the search bar is first tapped
 * Jenkins gerrit plugin integration
 * Try to understand if it is possible to authenticate to https://android-review.googlesource.com or not
-* Add an OPTION to download and show (and cache) userpics
+* [x] Add an OPTION to download and show (and cache) userpics
 * Consider adding suggestions for the search bar, like on the web??
 * Add "/a/" to the Gerrit instance URL when using authentication
 * Normalize Gerrit instance URLs (with or without https specified, with or without a slash in the end specified)

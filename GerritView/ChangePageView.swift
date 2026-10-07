@@ -129,6 +129,7 @@ struct PatchsetCommentsView: View {
                     ForEach(thread.comments, id: \.id) { comment in
                         VStack(alignment: .leading) {
                             HStack {
+                                UserpicView(account: comment.author, size: 16)
                                 Text(comment.author?.Name() ?? "Unknown").font(.footnote)
                                 if let patchSet = comment.patchSet {
                                     Text("PS\(patchSet)").font(.footnote)
@@ -442,6 +443,7 @@ struct CommitCommentsListView: View {
                                 ) ? " on behalf of " + message.realAuthor!.Name() : ""
                             )
 
+                            UserpicView(account: message.author ?? message.realAuthor, size: 16)
                             Text(message.date.formatted()).font(.footnote)
                             if (message.revisionNumber != nil) {
                                 Text("PS\(message.revisionNumber!)")

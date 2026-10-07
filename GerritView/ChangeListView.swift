@@ -5,8 +5,11 @@ struct ChangeRowView: View {
     
     var body: some View {
         VStack(alignment: .leading) {
-            Text(change.owner.Name())
-                .font(.subheadline)
+            HStack(spacing: 4) {
+                UserpicView(account: change.owner, size: 18)
+                Text(change.owner.Name())
+                    .font(.subheadline)
+            }
             switch change.status {
             case .abandoned:
                 Text(change.subject)
