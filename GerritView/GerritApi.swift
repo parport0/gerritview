@@ -727,65 +727,56 @@ func setupJsonDecoder() -> JSONDecoder {
     return decoder
 }
 
-public func decodeGerritChangeListResponse(from jsonString: String) throws -> [GerritChange] {
-    // To prevent against Cross Site Script Inclusion (XSSI) attacks, the JSON
-    // response body starts with a magic prefix line that must be stripped before
-    // feeding the rest of the response body to a JSON parser:
-    let cleanedJsonString = jsonString.replacingOccurrences(of: ")]}'\n", with: "")
-    
-    guard let jsonData = cleanedJsonString.data(using: .utf8) else {
-        return []
-    }
-
-    let decoder = setupJsonDecoder()
-    let changes = try decoder.decode([GerritChange].self, from: jsonData)
-    return changes
+// The response body starts with a magic prefix line that defeats Cross Site
+// Script Inclusion (XSSI) filtering and must be stripped before parsing.
+func stripXssiPrefix(_ data: Data) -> Data {
+    let prefix = Data(")]}'\n".utf8)
+    return data.prefix(prefix.count) == prefix ? data.dropFirst(prefix.count) : data
 }
 
-public func decodeGerritSingleChangeResponse(from jsonString: String) throws -> GerritChange? {
-    // To prevent against Cross Site Script Inclusion (XSSI) attacks, the JSON
-    // response body starts with a magic prefix line that must be stripped before
-    // feeding the rest of the response body to a JSON parser:
-    let cleanedJsonString = jsonString.replacingOccurrences(of: ")]}'\n", with: "")
+public struct GerritApiError: LocalizedError {
+    let status: Int
+    let body: String
 
-    guard let jsonData = cleanedJsonString.data(using: .utf8) else {
-        return nil
+    // nil when the response indicates success.
+    init?(response: URLResponse?, data: Data) {
+        guard let http = response as? HTTPURLResponse,
+              !(200...299).contains(http.statusCode) else {
+            return nil
+        }
+        self.status = http.statusCode
+        self.body = String(data: data.prefix(200), encoding: .utf8) ?? ""
     }
-    
-    let decoder = setupJsonDecoder()
-    let change = try decoder.decode(GerritChange.self, from: jsonData)
 
-    return change
+    public var errorDescription: String? {
+        return "Gerrit returned HTTP \(status): \(body)"
+    }
 }
 
-public func decodeGerritRevisionCommentsResponse(from jsonString: String) throws -> [String: [CommentInfo]] {
-    // To prevent against Cross Site Script Inclusion (XSSI) attacks, the JSON
-    // response body starts with a magic prefix line that must be stripped before
-    // feeding the rest of the response body to a JSON parser:
-    let cleanedJsonString = jsonString.replacingOccurrences(of: ")]}'\n", with: "")
-
-    guard let jsonData = cleanedJsonString.data(using: .utf8) else {
-        return [:]
+public func fetchGerritData(from url: URL) async throws -> Data {
+    let (data, response) = try await URLSession.shared.data(from: url)
+    if let error = GerritApiError(response: response, data: data) {
+        throw error
     }
-
-    let decoder = setupJsonDecoder()
-    let comments = try decoder.decode([String: [CommentInfo]].self, from: jsonData)
-
-    return comments
+    return data
 }
 
-public func decodeGerritFileDiffResponse(from jsonString: String) throws -> DiffInfo? {
-    // To prevent against Cross Site Script Inclusion (XSSI) attacks, the JSON
-    // response body starts with a magic prefix line that must be stripped before
-    // feeding the rest of the response body to a JSON parser:
-    let cleanedJsonString = jsonString.replacingOccurrences(of: ")]}'\n", with: "")
-
-    guard let jsonData = cleanedJsonString.data(using: .utf8) else {
-        return nil
-    }
-
+public func decodeGerritChangeListResponse(from data: Data) throws -> [GerritChange] {
     let decoder = setupJsonDecoder()
-    let diff = try decoder.decode(DiffInfo.self, from: jsonData)
+    return try decoder.decode([GerritChange].self, from: stripXssiPrefix(data))
+}
 
-    return diff
+public func decodeGerritSingleChangeResponse(from data: Data) throws -> GerritChange {
+    let decoder = setupJsonDecoder()
+    return try decoder.decode(GerritChange.self, from: stripXssiPrefix(data))
+}
+
+public func decodeGerritRevisionCommentsResponse(from data: Data) throws -> [String: [CommentInfo]] {
+    let decoder = setupJsonDecoder()
+    return try decoder.decode([String: [CommentInfo]].self, from: stripXssiPrefix(data))
+}
+
+public func decodeGerritFileDiffResponse(from data: Data) throws -> DiffInfo {
+    let decoder = setupJsonDecoder()
+    return try decoder.decode(DiffInfo.self, from: stripXssiPrefix(data))
 }

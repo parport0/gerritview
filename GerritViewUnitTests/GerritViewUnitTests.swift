@@ -53,7 +53,7 @@ struct GerritApiTests {
 
     @Test func decodeRevisionComments() throws {
         let commentsByFile = try decodeGerritRevisionCommentsResponse(
-            from: revisionCommentsJson
+            from: Data(revisionCommentsJson.utf8)
         )
 
         #expect(commentsByFile.count == 2)
@@ -85,21 +85,45 @@ struct GerritApiTests {
 
     @Test func decodeEmptyRevisionComments() throws {
         let commentsByFile = try decodeGerritRevisionCommentsResponse(
-            from: ")]}'\n{}\n"
+            from: Data(")]}'\n{}\n".utf8)
         )
         #expect(commentsByFile.isEmpty)
     }
 
     @Test func decodeMergeCommitCommentParent() throws {
         let commentsByFile = try decodeGerritRevisionCommentsResponse(
-            from: ")]}'\n"
+            from: Data((")]}'\n"
             + "{\"f.txt\": [{\"id\": \"c1\", \"side\": \"PARENT\", \"parent\": 2,"
             + " \"line\": 3, \"updated\": \"2024-01-01 10:00:00.000000000\","
-            + " \"message\": \"m\"}]}"
+            + " \"message\": \"m\"}]}").utf8)
         )
         let comment = commentsByFile["f.txt"]![0]
         #expect(comment.parentNumber == 2)
         #expect(comment.effectiveSide == .parent)
+    }
+}
+
+struct HttpErrorTests {
+    private func httpResponse(_ status: Int) -> HTTPURLResponse {
+        return HTTPURLResponse(
+            url: URL(string: "https://gerrit.example")!,
+            statusCode: status,
+            httpVersion: nil,
+            headerFields: nil
+        )!
+    }
+
+    @Test func httpErrorsDetected() {
+        #expect(GerritApiError(response: httpResponse(404), data: Data("Not found".utf8)) != nil)
+        #expect(GerritApiError(response: httpResponse(500), data: Data()) != nil)
+        #expect(GerritApiError(response: httpResponse(200), data: Data()) == nil)
+        #expect(GerritApiError(response: nil, data: Data()) == nil)
+    }
+
+    @Test func xssiPrefixStrippedOnce() {
+        let body = Data(")]}'\n[{\"a\": 1}]\n".utf8)
+        #expect(stripXssiPrefix(body) == Data("[{\"a\": 1}]\n".utf8))
+        #expect(stripXssiPrefix(Data("[{\"a\": 1}]".utf8)) == Data("[{\"a\": 1}]".utf8))
     }
 }
 

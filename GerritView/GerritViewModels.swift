@@ -122,12 +122,9 @@ func composeRevisionCommentsGerritUrl(settings: Settings, change: String, revisi
         )
 
         do {
-            let (json, _) = try await URLSession.shared.data(from: queryUrl)
-            //print(String(data: json, encoding: .utf8)!)
-            let diff = try decodeGerritFileDiffResponse(
-                from: String(data: json, encoding: .utf8)!
-            )
-            self.state = State.loaded(diff!)
+            let data = try await fetchGerritData(from: queryUrl)
+            let diff = try decodeGerritFileDiffResponse(from: data)
+            self.state = State.loaded(diff)
         } catch {
             let nsError = error as NSError
 
@@ -162,17 +159,12 @@ func composeRevisionCommentsGerritUrl(settings: Settings, change: String, revisi
         )
 
         do {
-            //print(String(data: json, encoding: .utf8)!)
-            async let (changeJson, _) = URLSession.shared.data(from: queryUrl)
-            async let (commentsJson, _) = URLSession.shared.data(from: commentsUrl)
-            let (changeData, commentsData) = try await (changeJson, commentsJson)
-            let change = try decodeGerritSingleChangeResponse(
-                from: String(data: changeData, encoding: .utf8)!
-            )
-            let commentsByFile = try decodeGerritRevisionCommentsResponse(
-                from: String(data: commentsData, encoding: .utf8)!
-            )
-            self.state = State.loaded(change!, commentsByFile)
+            async let changeData = fetchGerritData(from: queryUrl)
+            async let commentsData = fetchGerritData(from: commentsUrl)
+            let (changeResponse, commentsResponse) = try await (changeData, commentsData)
+            let change = try decodeGerritSingleChangeResponse(from: changeResponse)
+            let commentsByFile = try decodeGerritRevisionCommentsResponse(from: commentsResponse)
+            self.state = State.loaded(change, commentsByFile)
         } catch {
             let nsError = error as NSError
 
@@ -213,11 +205,8 @@ func composeRevisionCommentsGerritUrl(settings: Settings, change: String, revisi
         // session instead of the shared session"
         // -- https://developer.apple.com/documentation/foundation/urlsession/shared
         do {
-            let (json, _) = try await URLSession.shared.data(from: queryUrl)
-            //print(String(data: json, encoding: .utf8)!)
-            let newChanges = try decodeGerritChangeListResponse(
-                from: String(data: json, encoding: .utf8)!
-            )
+            let data = try await fetchGerritData(from: queryUrl)
+            let newChanges = try decodeGerritChangeListResponse(from: data)
             if (!more) {
                 self.clearChanges()
             }

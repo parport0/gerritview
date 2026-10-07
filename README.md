@@ -40,7 +40,7 @@ I really wanted to see the statuses of changes from the change list on mobile. G
 * Add "/a/" to the Gerrit instance URL when using authentication
 * Normalize Gerrit instance URLs (with or without https specified, with or without a slash in the end specified)
 * Unwrap all optionals properly, pls no crash
-* Give better diagnostics on network errors
+* [x] Give better diagnostics on network errors
 
 ## Won't do
 
