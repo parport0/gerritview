@@ -454,6 +454,11 @@ struct ChangePageView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(change.subject).font(.headline)
                         changeStatusIcon(status: change.status)
+                        if let unresolved = change.unresolvedCommentCount, unresolved > 0 {
+                            Text("\(Image(systemName: "exclamationmark.bubble")) \(unresolved) unresolved")
+                                .font(.subheadline)
+                                .foregroundStyle(.orange)
+                        }
                         Text("\(Image(systemName: "folder"))\(change.project)")
                         Text("\(Image(systemName: "arrow.trianglehead.branch"))\(change.branch)")
                         if (change.submitRequirements != nil) {

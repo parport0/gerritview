@@ -18,6 +18,11 @@ struct ChangeRowView: View {
                 Text(change.subject).font(.headline).foregroundStyle(Color(hue: 0.38, saturation: 0.68, brightness: 0.53))
             }
             Text(change.project).font(.subheadline)
+            if let unresolved = change.unresolvedCommentCount, unresolved > 0 {
+                Text("\(Image(systemName: "exclamationmark.bubble")) \(unresolved) unresolved")
+                    .font(.subheadline)
+                    .foregroundStyle(.orange)
+            }
             VStack(alignment: .trailing) {
                 if (change.submitRequirements != nil) {
                     ForEach(change.submitRequirements!) { requirement in
