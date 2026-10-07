@@ -94,6 +94,15 @@ struct ChangeListView: View {
                 queryText = searchText
                 gerritChangesModel.clearChanges()
             }
+            .onChange(of: searchText) { _, newValue in
+                // Clearing the field with X does not trigger onSubmit.
+                if newValue.isEmpty && !queryText.isEmpty {
+                    queryText = newValue
+                    Task {
+                        await self.gerritChangesModel.fetchChanges(settings: settings, query: nil, more: false)
+                    }
+                }
+            }
             .alert("Communication failure", isPresented: $gerritChangesModel.showAlert, presenting: gerritChangesModel.errorMessage) { _ in
                 Button("Dismiss") {  }
             } message: { details in

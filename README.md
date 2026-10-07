@@ -31,7 +31,7 @@ I really wanted to see the statuses of changes from the change list on mobile. G
 * Dark theme 😖
 * Overall I need to understand how to use the standard colors
 * WatchOS version hahaha
-* Reset the search results when X is pressed in the search bar. It does not trigger onSubmit for some reason
+* [x] Reset the search results when X is pressed in the search bar. It does not trigger onSubmit for some reason
 * Fix the constraint conflict that gets logged when the search bar is first tapped
 * Jenkins gerrit plugin integration
 * Try to understand if it is possible to authenticate to https://android-review.googlesource.com or not
