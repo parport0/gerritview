@@ -399,9 +399,9 @@ struct CommitCommentsListView: View {
     let comments: [ChangeMessageInfo]?
 
     var body: some View {
-        if comments != nil {
+        if let comments {
             VStack(alignment: .leading) {
-                ForEach (comments!) { message in
+                ForEach(comments.reversed()) { message in
                     VStack(alignment: .leading) {
                         HStack {
                             let author: String = message.author?.Name() ?? "Gerrit" + (
@@ -420,7 +420,7 @@ struct CommitCommentsListView: View {
                         }
                         CommentText(message: message)
                     }
-                    if message.id != comments?.last?.id {
+                    if message.id != comments.first?.id {
                         Divider()
                     }
                 }

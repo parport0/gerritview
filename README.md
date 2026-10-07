@@ -22,7 +22,7 @@ I really wanted to see the statuses of changes from the change list on mobile. G
 * Fetch and use the search filter presets from Gerrit (seen in "Settings" -> "Menu"), OR a way to save the search filters in the app (not as cool)
 * Vote icons as colored letters (like "CR" letters in a green circle, instead of "Code-Review ✅")
 * Hide/show previous patchset comments
-* Comments under changes should probably be shown in reverse order on mobile (less scroll = good)
+* [x] Comments under changes should probably be shown in reverse order on mobile (less scroll = good)
 * Show that changes have unresolved comments as an icon
 * Maybe a nicer way to show comments-that-are-votes (like on Gerrit web, a comment with a Code-Review+1 vote will show a green badge on the comment)
 * Some event view would be nice? Checking latest Gerrit updates from the email inbox is unpleasant on mobile
