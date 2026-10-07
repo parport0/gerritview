@@ -93,11 +93,11 @@ func composeFileDiffGerritUrl(settings: Settings, change: String, revisionId: St
     return url
 }
 
-func composeRevisionCommentsGerritUrl(settings: Settings, change: String, revisionId: String) -> URL {
+func composeChangeCommentsGerritUrl(settings: Settings, change: String) -> URL {
     var (url, queryItems) = composeCommonPartOfGerritUrl(settings: settings)
 
     var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)!
-    urlComponents.percentEncodedPath = url.path() + "/changes/" + change + "/revisions/" + revisionId + "/comments"
+    urlComponents.percentEncodedPath = url.path() + "/changes/" + change + "/comments"
     url = urlComponents.url!
 
     url.append(queryItems: queryItems)
@@ -152,10 +152,9 @@ func composeRevisionCommentsGerritUrl(settings: Settings, change: String, revisi
             settings: settings,
             change: changeId
         )
-        let commentsUrl = composeRevisionCommentsGerritUrl(
+        let commentsUrl = composeChangeCommentsGerritUrl(
             settings: settings,
-            change: changeId,
-            revisionId: "current"
+            change: changeId
         )
 
         do {
@@ -163,7 +162,7 @@ func composeRevisionCommentsGerritUrl(settings: Settings, change: String, revisi
             async let commentsData = fetchGerritData(from: commentsUrl)
             let (changeResponse, commentsResponse) = try await (changeData, commentsData)
             let change = try decodeGerritSingleChangeResponse(from: changeResponse)
-            let commentsByFile = try decodeGerritRevisionCommentsResponse(from: commentsResponse)
+            let commentsByFile = try decodeGerritChangeCommentsResponse(from: commentsResponse)
             self.state = State.loaded(change, commentsByFile)
         } catch {
             let nsError = error as NSError

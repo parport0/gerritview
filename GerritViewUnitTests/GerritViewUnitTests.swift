@@ -52,7 +52,7 @@ struct GerritApiTests {
     """
 
     @Test func decodeRevisionComments() throws {
-        let commentsByFile = try decodeGerritRevisionCommentsResponse(
+        let commentsByFile = try decodeGerritChangeCommentsResponse(
             from: Data(revisionCommentsJson.utf8)
         )
 
@@ -84,14 +84,14 @@ struct GerritApiTests {
     }
 
     @Test func decodeEmptyRevisionComments() throws {
-        let commentsByFile = try decodeGerritRevisionCommentsResponse(
+        let commentsByFile = try decodeGerritChangeCommentsResponse(
             from: Data(")]}'\n{}\n".utf8)
         )
         #expect(commentsByFile.isEmpty)
     }
 
     @Test func decodeMergeCommitCommentParent() throws {
-        let commentsByFile = try decodeGerritRevisionCommentsResponse(
+        let commentsByFile = try decodeGerritChangeCommentsResponse(
             from: Data((")]}'\n"
             + "{\"f.txt\": [{\"id\": \"c1\", \"side\": \"PARENT\", \"parent\": 2,"
             + " \"line\": 3, \"updated\": \"2024-01-01 10:00:00.000000000\","
@@ -130,6 +130,7 @@ struct HttpErrorTests {
 struct InlineCommentsTests {
     func comment(
         id: String,
+        patchSet: Int? = 1,
         line: Int? = nil,
         range: CommentRange? = nil,
         side: CommentSide? = nil,
@@ -140,7 +141,7 @@ struct InlineCommentsTests {
     ) -> CommentInfo {
         return CommentInfo(
             id: id,
-            patchSet: 1,
+            patchSet: patchSet,
             path: nil,
             side: side,
             parentNumber: parent,
@@ -330,6 +331,44 @@ struct InlineCommentsTests {
             comment(id: "m", line: 2, side: .parent, parent: 2)
         ])
         #expect(commentId(of: result[2]) == "m")
+    }
+
+    @Test func patchsetFilterKeepsCurrentPatchSetOnly() {
+        let commentsByFile = [
+            "f.txt": [comment(id: "new", patchSet: 2), comment(id: "old", patchSet: 1)],
+            "g.txt": [comment(id: "old2", patchSet: 1)]
+        ]
+        let filtered = commentsForPatchSet(commentsByFile, current: 2, showOlder: false)
+        #expect(filtered["f.txt"]?.map { $0.id } == ["new"])
+        #expect(filtered["g.txt"] == nil)
+    }
+
+    @Test func patchsetFilterShowsAllWhenRequested() {
+        let commentsByFile = [
+            "f.txt": [comment(id: "new", patchSet: 2), comment(id: "old", patchSet: 1)]
+        ]
+        let filtered = commentsForPatchSet(commentsByFile, current: 2, showOlder: true)
+        #expect(filtered["f.txt"]?.count == 2)
+    }
+
+    @Test func patchsetFilterTreatsUnknownPatchSetAsCurrent() {
+        let commentsByFile = ["f.txt": [comment(id: "n", patchSet: nil)]]
+        let filtered = commentsForPatchSet(commentsByFile, current: 3, showOlder: false)
+        #expect(filtered["f.txt"]?.count == 1)
+    }
+
+    @Test func patchsetFilterShowsAllWithoutCurrent() {
+        let commentsByFile = ["f.txt": [comment(id: "old", patchSet: 1)]]
+        let filtered = commentsForPatchSet(commentsByFile, current: nil, showOlder: false)
+        #expect(filtered["f.txt"]?.count == 1)
+    }
+
+    @Test func olderPatchsetCommentsDetected() {
+        #expect(hasOlderPatchsetComments(["f.txt": [comment(id: "c", patchSet: 1)]], current: 2))
+        #expect(!hasOlderPatchsetComments(["f.txt": [comment(id: "c", patchSet: 2)]], current: 2))
+        #expect(!hasOlderPatchsetComments(["f.txt": [comment(id: "c", patchSet: nil)]], current: 2))
+        #expect(!hasOlderPatchsetComments([:], current: 2))
+        #expect(!hasOlderPatchsetComments(["f.txt": [comment(id: "c", patchSet: 1)]], current: nil))
     }
 }
 

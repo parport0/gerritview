@@ -771,7 +771,7 @@ public func decodeGerritSingleChangeResponse(from data: Data) throws -> GerritCh
     return try decoder.decode(GerritChange.self, from: stripXssiPrefix(data))
 }
 
-public func decodeGerritRevisionCommentsResponse(from data: Data) throws -> [String: [CommentInfo]] {
+public func decodeGerritChangeCommentsResponse(from data: Data) throws -> [String: [CommentInfo]] {
     let decoder = setupJsonDecoder()
     return try decoder.decode([String: [CommentInfo]].self, from: stripXssiPrefix(data))
 }

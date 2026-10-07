@@ -464,6 +464,78 @@ struct CommitCommentsListView: View {
     }
 }
 
+struct ChangePageLoadedView: View {
+    let change: GerritChange
+    let commentsByFile: [String: [CommentInfo]]
+    @State private var showOlderPatchsets = false
+
+    private var currentPatchSet: Int? {
+        return change.currentRevisionNumber
+    }
+
+    private var visibleComments: [String: [CommentInfo]] {
+        return commentsForPatchSet(
+            commentsByFile,
+            current: currentPatchSet,
+            showOlder: showOlderPatchsets
+        )
+    }
+
+    var body: some View {
+        ScrollView(.vertical) {
+            VStack(alignment: .leading) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(change.subject).font(.headline)
+                    changeStatusIcon(status: change.status)
+                    if let unresolved = change.unresolvedCommentCount, unresolved > 0 {
+                        Text("\(Image(systemName: "exclamationmark.bubble")) \(unresolved) unresolved")
+                            .font(.subheadline)
+                            .foregroundStyle(.orange)
+                    }
+                    Text("\(Image(systemName: "folder"))\(change.project)")
+                    Text("\(Image(systemName: "arrow.trianglehead.branch"))\(change.branch)")
+                    if (change.submitRequirements != nil) {
+                        ForEach(change.submitRequirements!) { requirement in
+                            if (
+                                requirement.status != .notApplicable
+                            ) {
+                                HStack {
+                                    RequirementBadgeView(name: requirement.name, status: requirement.status)
+                                    Text(requirement.name)
+                                        .font(.subheadline)
+                                    Spacer()
+                                }
+                            }
+                        }
+                    }
+                }
+                if let revisions = change.revisions,
+                   let currentRevision = change.currentRevision,
+                   let currentRevisionContent = revisions[currentRevision]
+                {
+                    CommitMessageView(commit: currentRevisionContent.commit)
+                    if hasOlderPatchsetComments(commentsByFile, current: currentPatchSet) {
+                        Toggle(
+                            "Comments and messages from older patchsets",
+                            isOn: $showOlderPatchsets
+                        )
+                            .font(.subheadline)
+                    }
+                    CommitFilesListView(
+                        change: change,
+                        revision: currentRevision,
+                        files: currentRevisionContent.files,
+                        commentsByFile: visibleComments
+                    )
+                    PatchsetCommentsView(threads: patchsetLevelThreads(visibleComments))
+                }
+
+                CommitCommentsListView(comments: change.messages)
+            }.padding(4)
+        }
+    }
+}
+
 struct ChangePageView: View {
     var changeId: String
     @State private var gerritChangeModel = GerritChangePageViewModel()
@@ -482,54 +554,11 @@ struct ChangePageView: View {
         case .failed(let error):
             Text(error.localizedDescription)
         case .loaded(let change, let commentsByFile):
-            ScrollView(.vertical) {
-                VStack(alignment: .leading) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(change.subject).font(.headline)
-                        changeStatusIcon(status: change.status)
-                        if let unresolved = change.unresolvedCommentCount, unresolved > 0 {
-                            Text("\(Image(systemName: "exclamationmark.bubble")) \(unresolved) unresolved")
-                                .font(.subheadline)
-                                .foregroundStyle(.orange)
-                        }
-                        Text("\(Image(systemName: "folder"))\(change.project)")
-                        Text("\(Image(systemName: "arrow.trianglehead.branch"))\(change.branch)")
-                        if (change.submitRequirements != nil) {
-                            ForEach(change.submitRequirements!) { requirement in
-                                if (
-                                    requirement.status != .notApplicable
-                                ) {
-                                    HStack {
-                                        RequirementBadgeView(name: requirement.name, status: requirement.status)
-                                        Text(requirement.name)
-                                            .font(.subheadline)
-                                        Spacer()
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if let revisions = change.revisions,
-                       let currentRevision = change.currentRevision,
-                       let currentRevisionContent = revisions[currentRevision]
-                    {
-                        CommitMessageView(commit: currentRevisionContent.commit)
-                        CommitFilesListView(
-                            change: change,
-                            revision: currentRevision,
-                            files: currentRevisionContent.files,
-                            commentsByFile: commentsByFile
-                        )
-                        PatchsetCommentsView(threads: patchsetLevelThreads(commentsByFile))
-                    }
-
-                    CommitCommentsListView(comments: change.messages)
-                }.padding(4)
-            }
-            .refreshable {
-                await self.gerritChangeModel
-                    .fetchChange(settings: settings, changeId: changeId)
-            }
+            ChangePageLoadedView(change: change, commentsByFile: commentsByFile)
+                .refreshable {
+                    await self.gerritChangeModel
+                        .fetchChange(settings: settings, changeId: changeId)
+                }
         }
     }
 }

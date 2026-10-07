@@ -111,6 +111,29 @@ func patchsetLevelThreads(_ commentsByFile: [String: [CommentInfo]]) -> [Comment
     return groupCommentThreads(commentsByFile["/PATCHSET_LEVEL"] ?? [])
 }
 
+// Comments belonging to the current patch set, unless older ones were
+// requested. Comments without a patch set count as current; file entries
+// left without comments are dropped.
+func commentsForPatchSet(_ commentsByFile: [String: [CommentInfo]], current: Int?, showOlder: Bool) -> [String: [CommentInfo]] {
+    if showOlder || current == nil {
+        return commentsByFile
+    }
+    return commentsByFile.mapValues { comments in
+            comments.filter { $0.patchSet == nil || $0.patchSet == current }
+        }
+        .filter { !$0.value.isEmpty }
+}
+
+// Whether comments from patch sets older than `current` exist.
+func hasOlderPatchsetComments(_ commentsByFile: [String: [CommentInfo]], current: Int?) -> Bool {
+    guard let current else { return false }
+    return commentsByFile.values.contains { comments in
+        comments.contains { comment in
+            (comment.patchSet ?? current) < current
+        }
+    }
+}
+
 extension CommentInfo {
     // A file comment has neither a line nor a range (or line 0, as used by drafts).
     var isFileComment: Bool {
