@@ -10,6 +10,7 @@ internal import Combine
         @AppStorage("settingsGerritUsername") var gerritUsername: String = ""
         @AppStorage("settingsGerritPassword") var gerritPassword: String = ""
         @AppStorage("settingsShowUserpics") var showUserpics: Bool = false
+        @AppStorage("settingsReverseComments") var reverseComments: Bool = true
 
     }
     
@@ -36,6 +37,9 @@ internal import Combine
     var showUserpics: Bool {
         didSet { storage.showUserpics = showUserpics }
     }
+    var reverseComments: Bool {
+        didSet { storage.reverseComments = reverseComments }
+    }
 
     // Saved search queries; the view mirrors this into local state.
     var savedFilters: [String] {
@@ -51,6 +55,7 @@ internal import Combine
         gerritUsername = storage.gerritUsername
         gerritPassword = storage.gerritPassword
         showUserpics = storage.showUserpics
+        reverseComments = storage.reverseComments
     }
 }
 
@@ -108,6 +113,7 @@ struct SettingsView: View {
             }
             Section {
                 Toggle("Show userpics", systemImage: "person.crop.circle", isOn: $settings.showUserpics)
+                Toggle("Newest comments first", isOn: $settings.reverseComments)
             } header: {
                 Text("Appearance")
             }

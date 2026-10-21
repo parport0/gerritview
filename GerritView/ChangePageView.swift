@@ -430,11 +430,13 @@ struct CommentTextViewRepresentable: UIViewRepresentable {
 
 struct CommitCommentsListView: View {
     let comments: [ChangeMessageInfo]?
+    @Environment(Settings.self) var settings: Settings
 
     var body: some View {
         if let comments {
+            let ordered = settings.reverseComments ? Array(comments.reversed()) : comments
             VStack(alignment: .leading) {
-                ForEach(comments.reversed()) { message in
+                ForEach(ordered) { message in
                     VStack(alignment: .leading) {
                         HStack {
                             let author: String = message.author?.Name() ?? "Gerrit" + (
