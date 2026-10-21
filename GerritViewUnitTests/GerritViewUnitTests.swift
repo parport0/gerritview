@@ -230,7 +230,7 @@ struct InlineCommentsTests {
             .line(DiffLine(beforeNumber: 2, afterNumber: 2, text: "l2")),
             .line(DiffLine(beforeNumber: 3, afterNumber: nil, text: "d1")),
             .line(DiffLine(beforeNumber: nil, afterNumber: 3, text: "n1")),
-            .skippedLines(beforeStart: 4, afterStart: 4, count: 5)
+            .skippedLines(beforeStart: 4, afterStart: 4, count: 5, lines: nil)
         ])
     }
 
@@ -241,9 +241,7 @@ struct InlineCommentsTests {
     @Test func expandUnchangedFile() {
         let entries = expandDiffLines(diff([ab(["a", "b", "c"])]))
         #expect(entries == [
-            .line(DiffLine(beforeNumber: 1, afterNumber: 1, text: "a")),
-            .line(DiffLine(beforeNumber: 2, afterNumber: 2, text: "b")),
-            .line(DiffLine(beforeNumber: 3, afterNumber: 3, text: "c"))
+            .skippedLines(beforeStart: 1, afterStart: 1, count: 3, lines: ["a", "b", "c"])
         ])
     }
 
@@ -270,7 +268,7 @@ struct InlineCommentsTests {
         let result = interleaveComments(entries: entries, comments: [
             comment(id: "f", message: "file-level")
         ])
-        #expect(result.count == 3)
+        #expect(result.count == 2)
         #expect(commentId(of: result[0]) == "f")
         #expect(result[0].thread?.comments[0].message == "file-level")
     }
@@ -307,7 +305,7 @@ struct InlineCommentsTests {
         let result = interleaveComments(entries: entries, comments: [
             comment(id: "rg", range: range)
         ])
-        #expect(commentId(of: result[2]) == "rg")
+        #expect(commentId(of: result[1]) == "rg")
     }
 
     @Test func repliesGroupIntoThreads() {
@@ -334,10 +332,10 @@ struct InlineCommentsTests {
         ]
         let result = interleaveComments(entries: entries, comments: comments)
 
-        // Both anchors match the same ab line ("b", entry index 1); they end up adjacent after it.
-        #expect(result.count == 5)
-        #expect(commentId(of: result[2]) == "before")
-        #expect(commentId(of: result[3]) == "after")
+        // Both anchors fall inside the single collapsed region; they end up adjacent after it.
+        #expect(result.count == 3)
+        #expect(commentId(of: result[1]) == "before")
+        #expect(commentId(of: result[2]) == "after")
     }
 
     @Test func parentNumberPickedFromParentCommentsOnly() {
@@ -377,7 +375,7 @@ struct InlineCommentsTests {
         let result = interleaveComments(entries: entries, comments: [
             comment(id: "m", line: 2, side: .parent, parent: 2)
         ])
-        #expect(commentId(of: result[2]) == "m")
+        #expect(commentId(of: result[1]) == "m")
     }
 
     @Test func patchsetFilterKeepsCurrentPatchSetOnly() {

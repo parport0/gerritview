@@ -17,22 +17,36 @@ struct CommentThread: Equatable {
 
 enum DiffEntry: Equatable {
     case line(DiffLine)
-    case skippedLines(beforeStart: Int, afterStart: Int, count: Int)
+    case skippedLines(beforeStart: Int, afterStart: Int, count: Int, lines: [String]?)
     case comments(CommentThread)
 }
 
 // Expands DiffInfo chunks into a linear list of rendered entries, tracking
-// line numbers on both sides (before = PARENT, after = REVISION).
-func expandDiffLines(_ diff: DiffInfo) -> [DiffEntry] {
-    var entries: [DiffEntry] = []
+// line numbers on both sides (before = PARENT, after = REVISION). Unchanged
+// stretches farther than `context` lines away from any edit are collapsed;
+// their lines ship with the entry, as current Gerrit servers return the whole
+// file in the diff. Regions collapsed by the server (`skip` chunks) have no
+// local lines and fetch their content on demand.
+func expandDiffLines(_ diff: DiffInfo, context: Int = 10) -> [DiffEntry] {
+    struct Row {
+        let beforeNumber: Int?
+        let afterNumber: Int?
+        let text: String
+        let skip: Int?
+        let pinned: Bool
+    }
+
+    var rows: [Row] = []
     var before = 0
     var after = 0
     for chunk in diff.content {
         if let skip = chunk.skip {
-            entries.append(.skippedLines(
-                beforeStart: before + 1,
-                afterStart: after + 1,
-                count: skip
+            rows.append(Row(
+                beforeNumber: before + 1,
+                afterNumber: after + 1,
+                text: "",
+                skip: skip,
+                pinned: true
             ))
             before += skip
             after += skip
@@ -41,36 +55,87 @@ func expandDiffLines(_ diff: DiffInfo) -> [DiffEntry] {
         let aLines = chunk.a ?? []
         let bLines = chunk.b ?? []
         let abLines = chunk.ab ?? []
-        let rows = max(aLines.count, bLines.count, abLines.count)
-        for i in 0..<rows {
+        let rowCount = max(aLines.count, bLines.count, abLines.count)
+        for i in 0..<rowCount {
             if i < abLines.count {
                 before += 1
                 after += 1
-                entries.append(.line(DiffLine(
+                rows.append(Row(
                     beforeNumber: before,
                     afterNumber: after,
-                    text: abLines[i]
-                )))
+                    text: abLines[i],
+                    skip: nil,
+                    pinned: false
+                ))
             } else {
                 if i < aLines.count {
                     before += 1
-                    entries.append(.line(DiffLine(
+                    rows.append(Row(
                         beforeNumber: before,
                         afterNumber: nil,
-                        text: aLines[i]
-                    )))
+                        text: aLines[i],
+                        skip: nil,
+                        pinned: true
+                    ))
                 }
                 if i < bLines.count {
                     after += 1
-                    entries.append(.line(DiffLine(
+                    rows.append(Row(
                         beforeNumber: nil,
                         afterNumber: after,
-                        text: bLines[i]
-                    )))
+                        text: bLines[i],
+                        skip: nil,
+                        pinned: true
+                    ))
                 }
             }
         }
     }
+
+    var visible = Array(repeating: false, count: rows.count)
+    for (i, row) in rows.enumerated() where row.pinned {
+        for j in max(0, i - context)...min(rows.count - 1, i + context) {
+            visible[j] = true
+        }
+    }
+
+    var entries: [DiffEntry] = []
+    var run: [Row] = []
+    func flushRun() {
+        guard let first = run.first, let beforeStart = first.beforeNumber, let afterStart = first.afterNumber else {
+            run = []
+            return
+        }
+        entries.append(.skippedLines(
+            beforeStart: beforeStart,
+            afterStart: afterStart,
+            count: run.count,
+            lines: run.map { $0.text }
+        ))
+        run = []
+    }
+    for (i, row) in rows.enumerated() {
+        if visible[i] {
+            flushRun()
+            if let skip = row.skip {
+                entries.append(.skippedLines(
+                    beforeStart: row.beforeNumber!,
+                    afterStart: row.afterNumber!,
+                    count: skip,
+                    lines: nil
+                ))
+            } else {
+                entries.append(.line(DiffLine(
+                    beforeNumber: row.beforeNumber,
+                    afterNumber: row.afterNumber,
+                    text: row.text
+                )))
+            }
+        } else {
+            run.append(row)
+        }
+    }
+    flushRun()
     return entries
 }
 
@@ -192,7 +257,7 @@ func anchorPosition(for thread: CommentThread, in entries: [DiffEntry]) -> Int {
             if matches {
                 return i + 1
             }
-        case .skippedLines(let beforeStart, let afterStart, let count):
+        case .skippedLines(let beforeStart, let afterStart, let count, _):
             let start = side == .before ? beforeStart : afterStart
             if endLine >= start && endLine < start + count {
                 return i + 1
