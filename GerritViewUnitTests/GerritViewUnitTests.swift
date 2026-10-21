@@ -458,6 +458,34 @@ struct AvatarTests {
     }
 }
 
+struct FileContentTests {
+    private func content(_ text: String) -> Data {
+        return Data(Data(text.utf8).base64EncodedString().utf8)
+    }
+
+    @Test func linesSlicedFromStart() {
+        #expect(fileContentLines(from: content("l1\nl2\nl3\nl4\nl5"), start: 2, count: 2) == ["l2", "l3"])
+    }
+
+    @Test func trailingNewlineDropped() {
+        #expect(fileContentLines(from: content("l1\nl2\n"), start: 1, count: 2) == ["l1", "l2"])
+    }
+
+    @Test func windowsLineEndings() {
+        #expect(fileContentLines(from: content("l1\r\nl2"), start: 1, count: 2) == ["l1", "l2"])
+    }
+
+    @Test func rangeClampedToFile() {
+        #expect(fileContentLines(from: content("l1\nl2"), start: 1, count: 100) == ["l1", "l2"])
+        #expect(fileContentLines(from: content("l1\nl2"), start: 50, count: 2) == [])
+        #expect(fileContentLines(from: content(""), start: 1, count: 1) == [])
+    }
+
+    @Test func invalidBase64Detected() {
+        #expect(fileContentLines(from: Data("!!!".utf8), start: 1, count: 1) == nil)
+    }
+}
+
 struct DiffUrlTests {
     let settings = Settings()
 
@@ -480,6 +508,13 @@ struct DiffUrlTests {
             settings: settings, change: "c", revisionId: "1", fileId: "f.txt"
         )
         #expect(parentQueryItem(of: url) == nil)
+    }
+
+    @Test func contentUrlEncoded() {
+        let url = composeFileContentGerritUrl(
+            settings: settings, change: "c", revisionId: "1", fileId: "dir/f.txt"
+        )
+        #expect(url.absoluteString.contains("/files/dir%2Ff.txt/content"))
     }
 }
 

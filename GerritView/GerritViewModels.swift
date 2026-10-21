@@ -93,6 +93,22 @@ func composeFileDiffGerritUrl(settings: Settings, change: String, revisionId: St
     return url
 }
 
+func composeFileContentGerritUrl(settings: Settings, change: String, revisionId: String, fileId: String) -> URL {
+    var (url, queryItems) = composeCommonPartOfGerritUrl(settings: settings)
+
+    var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)!
+    var characterSet = CharacterSet.urlPathAllowed
+    characterSet.remove("/")
+    let encodedFilePath: String = fileId.addingPercentEncoding(
+        withAllowedCharacters: characterSet
+    )!
+    urlComponents.percentEncodedPath = url.path() + "/changes/" + change + "/revisions/" + revisionId + "/files/" + encodedFilePath + "/content"
+    url = urlComponents.url!
+
+    url.append(queryItems: queryItems)
+    return url
+}
+
 func composeChangeCommentsGerritUrl(settings: Settings, change: String) -> URL {
     var (url, queryItems) = composeCommonPartOfGerritUrl(settings: settings)
 

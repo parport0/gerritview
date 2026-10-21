@@ -780,3 +780,27 @@ public func decodeGerritFileDiffResponse(from data: Data) throws -> DiffInfo {
     let decoder = setupJsonDecoder()
     return try decoder.decode(DiffInfo.self, from: stripXssiPrefix(data))
 }
+
+// Decodes base64 file content and returns `count` lines starting at the
+// 1-based line `start`. nil when the content is not valid base64.
+func fileContentLines(from data: Data, start: Int, count: Int) -> [String]? {
+    let encoded = String((String(data: data, encoding: .utf8) ?? "").filter { !$0.isWhitespace })
+    guard let decoded = Data(base64Encoded: encoded) else {
+        return nil
+    }
+    var text = String(decoding: decoded, as: UTF8.self)
+    if text.isEmpty {
+        return []
+    }
+    text = text.replacingOccurrences(of: "\r\n", with: "\n")
+    var lines = text.components(separatedBy: "\n")
+    if lines.count > 1 && lines.last!.isEmpty {
+        lines.removeLast() // trailing newline
+    }
+    let lower = max(0, start - 1)
+    let upper = min(lines.count, max(lower, start - 1 + count))
+    if lower >= upper {
+        return []
+    }
+    return Array(lines[lower..<upper])
+}
