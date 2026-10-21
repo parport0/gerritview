@@ -484,6 +484,19 @@ struct ChangePageLoadedView: View {
         )
     }
 
+    private var visibleMessages: [ChangeMessageInfo] {
+        return messagesForPatchSet(
+            change.messages ?? [],
+            current: currentPatchSet,
+            showOlder: showOlderPatchsets
+        )
+    }
+
+    private var hasOlderPatchsets: Bool {
+        return hasOlderPatchsetComments(commentsByFile, current: currentPatchSet)
+            || hasOlderPatchsetMessages(change.messages ?? [], current: currentPatchSet)
+    }
+
     var body: some View {
         ScrollView(.vertical) {
             VStack(alignment: .leading) {
@@ -517,7 +530,7 @@ struct ChangePageLoadedView: View {
                    let currentRevisionContent = revisions[currentRevision]
                 {
                     CommitMessageView(commit: currentRevisionContent.commit)
-                    if hasOlderPatchsetComments(commentsByFile, current: currentPatchSet) {
+                    if hasOlderPatchsets {
                         Toggle(
                             "Comments and messages from older patchsets",
                             isOn: $showOlderPatchsets
@@ -533,7 +546,7 @@ struct ChangePageLoadedView: View {
                     PatchsetCommentsView(threads: patchsetLevelThreads(visibleComments))
                 }
 
-                CommitCommentsListView(comments: change.messages)
+                CommitCommentsListView(comments: visibleMessages)
             }.padding(4)
         }
     }

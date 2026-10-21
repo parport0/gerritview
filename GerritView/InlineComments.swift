@@ -134,6 +134,21 @@ func hasOlderPatchsetComments(_ commentsByFile: [String: [CommentInfo]], current
     }
 }
 
+// Change messages belonging to the current patch set, unless older ones
+// were requested. Messages without a revision number count as current.
+func messagesForPatchSet(_ messages: [ChangeMessageInfo], current: Int?, showOlder: Bool) -> [ChangeMessageInfo] {
+    if showOlder || current == nil {
+        return messages
+    }
+    return messages.filter { $0.revisionNumber == nil || $0.revisionNumber == current }
+}
+
+// Whether change messages from patch sets older than `current` exist.
+func hasOlderPatchsetMessages(_ messages: [ChangeMessageInfo], current: Int?) -> Bool {
+    guard let current else { return false }
+    return messages.contains { ($0.revisionNumber ?? current) < current }
+}
+
 extension CommentInfo {
     // A file comment has neither a line nor a range (or line 0, as used by drafts).
     var isFileComment: Bool {
