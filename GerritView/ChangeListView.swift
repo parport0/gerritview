@@ -28,16 +28,14 @@ struct ChangeRowView: View {
                     .font(.subheadline)
                     .foregroundStyle(.orange)
             }
-            VStack(alignment: .trailing) {
+            HStack {
+                Spacer()
                 if (change.submitRequirements != nil) {
                     ForEach(change.submitRequirements!) { requirement in
                         if (
                             requirement.status != .notApplicable
                         ) {
-                            HStack {
-                                Spacer()
-                                RequirementBadgeView(name: requirement.name, status: requirement.status)
-                            }
+                            RequirementBadgeView(name: requirement.name, status: requirement.status)
                         }
                     }
                 }
