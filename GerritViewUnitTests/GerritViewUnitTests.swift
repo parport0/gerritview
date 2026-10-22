@@ -589,6 +589,27 @@ struct CommitMessageLinkTests {
         let attributed = linkifiedCommitMessage("No links here")
         #expect(attributed.runs.compactMap { $0.link }.isEmpty)
     }
+
+    @Test func emailIsNotLinked() {
+        let attributed = linkifiedCommitMessage("Contact user@example.com now")
+        #expect(attributed.runs.compactMap { $0.link }.isEmpty)
+    }
+
+    @Test func changeIdIsLinked() {
+        let id = String(repeating: "a", count: 39) + "b"
+        let attributed = linkifiedCommitMessage("Change-Id: I" + id)
+        let links = attributed.runs.compactMap { $0.link }
+        #expect(links.count == 1)
+        #expect(links[0].absoluteString == "gerritview://change/I" + id)
+    }
+
+    @Test func urlWinsOverChangeId() {
+        let id = String(repeating: "a", count: 39) + "b"
+        let attributed = linkifiedCommitMessage("See https://example.com/I" + id + "/x")
+        let links = attributed.runs.compactMap { $0.link }
+        #expect(links.count == 1)
+        #expect(links[0].host == "example.com")
+    }
 }
 
 struct CommentTimestampTests {

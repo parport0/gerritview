@@ -29,6 +29,10 @@ struct AccountInfoView: View {
     }
 }
 
+struct ChangeRoute: Hashable {
+    let changeId: String
+}
+
 struct ContentView: View {
     @State var settings = Settings()
     @State private var path = NavigationPath()
@@ -39,12 +43,17 @@ struct ContentView: View {
                 ChangeListView()
             }.onOpenURL { url in
                 let components = URLComponents(string: url.absoluteString)
-                if (components?.scheme == "gerritview") {
-                    let userId = Int((components?.host!)!)
-                    path.append(AccountId(accountId: userId!))
+                if components?.scheme == "gerritview" {
+                    if components?.host == "change" {
+                        path.append(ChangeRoute(changeId: String((components?.path ?? "").dropFirst())))
+                    } else if let userId = Int(components?.host ?? "") {
+                        path.append(AccountId(accountId: userId))
+                    }
                 }
             }.navigationDestination(for: AccountId.self) { id in
                 AccountInfoView(id: id.accountId)
+            }.navigationDestination(for: ChangeRoute.self) { route in
+                ChangePageView(changeId: route.changeId)
             }
             .toolbar {
                 Group {

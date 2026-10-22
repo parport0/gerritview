@@ -1,15 +1,31 @@
 import SwiftUI
 
-// Detects URLs in plain text and turns them into links that SwiftUI renders
-// as tappable.
+// Detects what web Gerrit links in plain text: URLs (except email
+// addresses) and Gerrit change-ids. Change-ids link into the app via the
+// gerritview: URL scheme.
 func linkifiedCommitMessage(_ message: String) -> AttributedString {
     let attributed = NSMutableAttributedString(string: message)
-    let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
     let full = NSRange(location: 0, length: (message as NSString).length)
+    var links: [(range: NSRange, url: URL)] = []
+    let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
     for match in detector?.matches(in: message, options: [], range: full) ?? [] {
-        if let url = match.url {
-            attributed.addAttribute(.link, value: url, range: match.range)
+        if let url = match.url, url.scheme != "mailto" {
+            links.append((match.range, url))
         }
+    }
+    let changeIds = try? NSRegularExpression(pattern: "\\bI[0-9a-f]{40}\\b")
+    for match in changeIds?.matches(in: message, options: [], range: full) ?? [] {
+        // URLs win over change-ids on overlap.
+        if links.contains(where: { $0.range.intersection(match.range) != nil }) {
+            continue
+        }
+        let id = (message as NSString).substring(with: match.range)
+        if let url = URL(string: "gerritview://change/" + id) {
+            links.append((match.range, url))
+        }
+    }
+    for (range, url) in links {
+        attributed.addAttribute(.link, value: url, range: range)
     }
     return AttributedString(attributed)
 }
