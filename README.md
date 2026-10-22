@@ -40,6 +40,8 @@ I really wanted to see the statuses of changes from the change list on mobile. G
 * Add "/a/" to the Gerrit instance URL when using authentication
 * Normalize Gerrit instance URLs (with or without https specified, with or without a slash in the end specified)
 * Display adding people to reviewers/CC
+* Make code and commit messages selectable and copyable
+* Investigate how the Gerrit web implementation hides files that only have comments and no edits from the file list
 * Unwrap all optionals properly, pls no crash
 * [x] Give better diagnostics on network errors
 
