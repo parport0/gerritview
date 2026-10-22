@@ -20,6 +20,8 @@ struct ChangeRowView: View {
             case .merged:
                 Text(change.subject).font(.headline).foregroundStyle(Color(hue: 0.38, saturation: 0.68, brightness: 0.53))
             }
+            Text("#" + String(change.number))
+                .font(.subheadline)
             Text(change.project).font(.subheadline)
             if let unresolved = change.unresolvedCommentCount, unresolved > 0 {
                 Text("\(Image(systemName: "exclamationmark.bubble")) \(unresolved) unresolved")

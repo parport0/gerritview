@@ -521,6 +521,7 @@ struct ChangePageLoadedView: View {
                             .font(.subheadline)
                             .foregroundStyle(.orange)
                     }
+                    Text("#" + String(change.number))
                     Text("\(Image(systemName: "folder"))\(change.project)")
                     Text("\(Image(systemName: "arrow.trianglehead.branch"))\(change.branch)")
                     if (change.submitRequirements != nil) {
