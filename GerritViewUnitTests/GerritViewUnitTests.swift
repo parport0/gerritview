@@ -414,14 +414,6 @@ struct InlineCommentsTests {
         #expect(filtered["f.txt"]?.count == 1)
     }
 
-    @Test func olderPatchsetCommentsDetected() {
-        #expect(hasOlderPatchsetComments(["f.txt": [comment(id: "c", patchSet: 1)]], current: 2))
-        #expect(!hasOlderPatchsetComments(["f.txt": [comment(id: "c", patchSet: 2)]], current: 2))
-        #expect(!hasOlderPatchsetComments(["f.txt": [comment(id: "c", patchSet: nil)]], current: 2))
-        #expect(!hasOlderPatchsetComments([:], current: 2))
-        #expect(!hasOlderPatchsetComments(["f.txt": [comment(id: "c", patchSet: 1)]], current: nil))
-    }
-
     @Test func messagePatchsetFilterKeepsCurrentPatchSetOnly() {
         let messages = [message(revision: 2, id: "m2"), message(revision: 1, id: "m1")]
         #expect(messagesForPatchSet(messages, current: 2, showOlder: false).map { $0.id } == ["m2"])
@@ -431,14 +423,6 @@ struct InlineCommentsTests {
     @Test func messagePatchsetFilterTreatsUnknownRevisionAsCurrent() {
         let messages = [message(revision: nil, id: "m0")]
         #expect(messagesForPatchSet(messages, current: 3, showOlder: false).count == 1)
-        #expect(!hasOlderPatchsetMessages(messages, current: 3))
-    }
-
-    @Test func olderPatchsetMessagesDetected() {
-        let messages = [message(revision: 2, id: "m2"), message(revision: 1, id: "m1")]
-        #expect(hasOlderPatchsetMessages(messages, current: 2))
-        #expect(!hasOlderPatchsetMessages([message(revision: 2, id: "m2")], current: 2))
-        #expect(!hasOlderPatchsetMessages(messages, current: nil))
     }
 }
 

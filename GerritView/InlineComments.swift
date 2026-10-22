@@ -184,16 +184,6 @@ func commentsForPatchSet(_ commentsByFile: [String: [CommentInfo]], current: Int
         .filter { !$0.value.isEmpty }
 }
 
-// Whether comments from patch sets older than `current` exist.
-func hasOlderPatchsetComments(_ commentsByFile: [String: [CommentInfo]], current: Int?) -> Bool {
-    guard let current else { return false }
-    return commentsByFile.values.contains { comments in
-        comments.contains { comment in
-            (comment.patchSet ?? current) < current
-        }
-    }
-}
-
 // Change messages belonging to the current patch set, unless older ones
 // were requested. Messages without a revision number count as current.
 func messagesForPatchSet(_ messages: [ChangeMessageInfo], current: Int?, showOlder: Bool) -> [ChangeMessageInfo] {
@@ -201,12 +191,6 @@ func messagesForPatchSet(_ messages: [ChangeMessageInfo], current: Int?, showOld
         return messages
     }
     return messages.filter { $0.revisionNumber == nil || $0.revisionNumber == current }
-}
-
-// Whether change messages from patch sets older than `current` exist.
-func hasOlderPatchsetMessages(_ messages: [ChangeMessageInfo], current: Int?) -> Bool {
-    guard let current else { return false }
-    return messages.contains { ($0.revisionNumber ?? current) < current }
 }
 
 extension CommentInfo {
@@ -271,13 +255,13 @@ extension CommentThread {
     }
 }
 
-// Returns the insertion position for a thread: 0 = top of file,
-// i in 1...count = right after rendered entry i-1, count = end of diff.
-func anchorPosition(for thread: CommentThread, in entries: [DiffEntry]) -> Int {
-    guard let anchor = thread.anchor, !anchor.isFileComment else {
-        return 0
+// Returns the insertion position for a thread anchored on a rendered diff
+// line: 0 = top of file, i in 1...count = right after rendered entry i-1.
+// Returns nil when the anchor line is not part of the rendered diff.
+func anchorLinePosition(for thread: CommentThread, in entries: [DiffEntry]) -> Int? {
+    guard let anchor = thread.anchor, !anchor.isFileComment, let endLine = anchor.endLine else {
+        return nil
     }
-    let endLine = anchor.endLine!
     let side: DiffLineSide = anchor.effectiveSide == .parent ? .before : .after
 
     for (i, entry) in entries.enumerated() {
@@ -298,14 +282,30 @@ func anchorPosition(for thread: CommentThread, in entries: [DiffEntry]) -> Int {
             continue
         }
     }
-    // Line not present in the rendered diff (e.g. beyond it): show at the end.
-    return entries.count
+    return nil
 }
 
-func interleaveComments(entries: [DiffEntry], comments: [CommentInfo]) -> [DiffEntry] {
+// Returns the insertion position for a thread: 0 = top of file,
+// i in 1...count = right after rendered entry i-1, count = end of diff.
+func anchorPosition(for thread: CommentThread, in entries: [DiffEntry]) -> Int {
+    guard let anchor = thread.anchor else {
+        return 0
+    }
+    if anchor.isFileComment {
+        return 0
+    }
+    // Line not present in the rendered diff (e.g. beyond it): show at the end.
+    return anchorLinePosition(for: thread, in: entries) ?? entries.count
+}
+
+func interleaveComments(entries: [DiffEntry], comments: [CommentInfo], olderThreads: [CommentThread] = []) -> [DiffEntry] {
     var insertions: [Int: [CommentThread]] = [:]
     for thread in groupCommentThreads(comments) {
         let position = anchorPosition(for: thread, in: entries)
+        insertions[position, default: []].append(thread)
+    }
+    for thread in olderThreads {
+        let position = anchorLinePosition(for: thread, in: entries) ?? entries.count
         insertions[position, default: []].append(thread)
     }
 

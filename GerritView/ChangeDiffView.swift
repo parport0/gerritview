@@ -5,6 +5,7 @@ struct ChangeDiffView: View {
     let revisionId: String
     let fileId: String
     let comments: [CommentInfo]
+    var olderComments: [CommentInfo] = []
 
     @State private var gerritDiffModel = GerritFileDiffViewModel()
     @Environment(Settings.self) var settings: Settings
@@ -40,10 +41,9 @@ struct ChangeDiffView: View {
                         Color(UIColor.systemGroupedBackground)
                     )
                     DiffContentView(
-                        entries: interleaveComments(
-                            entries: expandDiffLines(diff),
-                            comments: comments
-                        ),
+                        entries: expandDiffLines(diff),
+                        comments: comments,
+                        olderComments: olderComments,
                         changeId: changeId,
                         revisionId: revisionId,
                         fileId: fileId
@@ -56,13 +56,31 @@ struct ChangeDiffView: View {
 
 struct DiffContentView: View {
     let entries: [DiffEntry]
+    let comments: [CommentInfo]
+    var olderComments: [CommentInfo] = []
     let changeId: String
     let revisionId: String
     let fileId: String
 
+    // Threads from older patch sets whose anchor line is no longer part of
+    // the rendered diff.
+    private func lostThreads() -> [CommentThread] {
+        return groupCommentThreads(olderComments).filter {
+            anchorLinePosition(for: $0, in: entries) == nil
+        }
+    }
+
     var body: some View {
+        let lost = lostThreads()
         LazyVStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(entries.enumerated()), id: \.offset) { _, entry in
+            ForEach(
+                Array(interleaveComments(
+                    entries: entries,
+                    comments: comments,
+                    olderThreads: groupCommentThreads(olderComments)
+                ).enumerated()),
+                id: \.offset
+            ) { _, entry in
                 switch entry {
                 case .line(let line):
                     DiffLineRow(line: line)
@@ -77,7 +95,12 @@ struct DiffContentView: View {
                         fileId: fileId
                     )
                 case .comments(let thread):
-                    CommentThreadRow(thread: thread)
+                    CommentThreadRow(
+                        thread: thread,
+                        note: lost.contains(thread)
+                            ? "Original comment position not found in this patchset"
+                            : nil
+                    )
                 }
             }
         }
@@ -140,6 +163,7 @@ struct SkippedLinesRow: View {
 
     var body: some View {
         let resolvedLines = localLines ?? lines
+        Group {
         if expanded {
             if let resolvedLines {
                 ForEach(Array(resolvedLines.enumerated()), id: \.offset) { i, text in
@@ -185,6 +209,7 @@ struct SkippedLinesRow: View {
             .buttonStyle(.plain)
             .padding(.horizontal, 4)
         }
+        }
     }
 
     // Hidden regions are unchanged code, so the revision-side content covers
@@ -214,6 +239,7 @@ struct SkippedLinesRow: View {
 
 struct CommentThreadRow: View {
     let thread: CommentThread
+    var note: String? = nil
 
     private func place(_ comment: CommentInfo) -> String {
         if comment.path == "/PATCHSET_LEVEL" {
@@ -239,6 +265,14 @@ struct CommentThreadRow: View {
             ? Color.yellow.opacity(0.25)
             : Color(uiColor: .secondarySystemBackground)
         VStack(alignment: .leading, spacing: 4) {
+            if let note {
+                HStack(spacing: 2) {
+                    Image(systemName: "info")
+                    Text(note)
+                }
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            }
             ForEach(thread.comments, id: \.id) { comment in
                 VStack(alignment: .leading, spacing: 1) {
                     HStack {

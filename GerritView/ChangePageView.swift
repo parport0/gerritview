@@ -24,6 +24,7 @@ struct CommitFilesListView: View {
     let revision: String
     let files: [String: FileInfo]?
     let commentsByFile: [String: [CommentInfo]]?
+    var olderCommentsByFile: [String: [CommentInfo]] = [:]
 
     private var paths: [String] {
         var all = Set<String>()
@@ -46,6 +47,10 @@ struct CommitFilesListView: View {
         return commentsByFile?[path] ?? []
     }
 
+    private func olderComments(for path: String) -> [CommentInfo] {
+        return olderCommentsByFile[path] ?? []
+    }
+
     var body: some View {
         if files != nil || commentsByFile != nil {
             let sortedPaths: [String] = paths
@@ -53,11 +58,12 @@ struct CommitFilesListView: View {
             VStack(alignment: .leading) {
                     ForEach (sortedPaths, id: \.self) { key in
                         NavigationLink(
-                            destination: ChangeDiffView(
+                            destination:                             ChangeDiffView(
                                 changeId: change.tripletId,
                                 revisionId: revision,
                                 fileId: key,
-                                comments: comments(for: key)
+                                comments: comments(for: key),
+                                olderComments: olderComments(for: key)
                             )
                         ) {
                             CommitFileRowView(
@@ -406,9 +412,13 @@ struct CommitCommentsListView: View {
 
     var body: some View {
         if let comments {
-            let ordered = settings.reverseComments ? Array(comments.reversed()) : comments
+            let newestFirst = settings.reverseComments
+            let items = comments.sorted { newestFirst ? $0.date > $1.date : $0.date < $1.date }
             VStack(alignment: .leading) {
-                ForEach(ordered) { message in
+                ForEach(Array(items.enumerated()), id: \.offset) { index, message in
+                    if index != 0 {
+                        Divider()
+                    }
                     VStack(alignment: .leading) {
                         HStack {
                             let author: String = message.author?.Name() ?? "Gerrit" + (
@@ -426,15 +436,12 @@ struct CommitCommentsListView: View {
                             Text(author)
                                 .font(.footnote)
                         }
-                            VStack(alignment: .leading) {
-                                CommentText(message: message)
+                        VStack(alignment: .leading) {
+                            CommentText(message: message)
                             ForEach(threadsByMessage[message.id] ?? [], id: \.comments.first?.id) { thread in
                                 CommentThreadRow(thread: thread)
                             }
                         }
-                    }
-                    if message.id != comments.first?.id {
-                        Divider()
                     }
                 }
             }
@@ -461,17 +468,46 @@ struct ChangePageLoadedView: View {
         )
     }
 
-    private var visibleMessages: [ChangeMessageInfo] {
-        return messagesForPatchSet(
-            change.messages ?? [],
-            current: currentPatchSet,
-            showOlder: showOlderPatchsets
-        )
+    private var threadsByMessage: [String: [CommentThread]] {
+        return threadsForChangeMessages(commentsByFile)
     }
 
-    private var hasOlderPatchsets: Bool {
-        return hasOlderPatchsetComments(commentsByFile, current: currentPatchSet)
-            || hasOlderPatchsetMessages(change.messages ?? [], current: currentPatchSet)
+    // Messages from older patch sets are hidden behind the toggle, except the
+    // ones that published inline comments; their comments stay visible.
+    private func messagesVisible(showOlder: Bool) -> [ChangeMessageInfo] {
+        let messages = change.messages ?? []
+        let current = messagesForPatchSet(messages, current: currentPatchSet, showOlder: showOlder)
+        let publishers = Set(threadsByMessage.keys)
+        return messages.filter { message in
+            return current.contains { $0.id == message.id } || publishers.contains(message.id)
+        }
+    }
+
+    private var hasHiddenMessages: Bool {
+        let messages = change.messages ?? []
+        return messages.count > messagesVisible(showOlder: false).count
+    }
+
+    // Comments from patch sets older than the current one. Shown even when
+    // older patch sets are not listed; empty while they are, to avoid
+    // showing them twice.
+    private var olderComments: [String: [CommentInfo]] {
+        guard !showOlderPatchsets, let current = currentPatchSet else {
+            return [:]
+        }
+        var result: [String: [CommentInfo]] = [:]
+        for (path, comments) in commentsByFile {
+            let older = comments.filter { comment in
+                guard let patchSet = comment.patchSet else {
+                    return false
+                }
+                return patchSet != current
+            }
+            if !older.isEmpty {
+                result[path] = older
+            }
+        }
+        return result
     }
 
     var body: some View {
@@ -507,9 +543,9 @@ struct ChangePageLoadedView: View {
                    let currentRevisionContent = revisions[currentRevision]
                 {
                     CommitMessageView(commit: currentRevisionContent.commit)
-                    if hasOlderPatchsets {
+                    if hasHiddenMessages {
                         Toggle(
-                            "Comments and messages from older patchsets",
+                            "Messages from older patchsets",
                             isOn: $showOlderPatchsets
                         )
                             .font(.subheadline)
@@ -518,13 +554,14 @@ struct ChangePageLoadedView: View {
                         change: change,
                         revision: currentRevision,
                         files: currentRevisionContent.files,
-                        commentsByFile: visibleComments
+                        commentsByFile: visibleComments,
+                        olderCommentsByFile: olderComments
                     )
                 }
 
                 CommitCommentsListView(
-                    comments: visibleMessages,
-                    threadsByMessage: threadsForChangeMessages(visibleComments)
+                    comments: messagesVisible(showOlder: showOlderPatchsets),
+                    threadsByMessage: threadsByMessage
                 )
             }.padding(4)
         }
