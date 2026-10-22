@@ -95,18 +95,6 @@ struct ChangeListView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        if let first = gerritChangesModel.changes.first {
-                            proxy.scrollTo(first.id, anchor: .top)
-                        }
-                        Task {
-                            await self.gerritChangesModel.fetchChanges(settings: settings, query: queryText, more: false)
-                        }
-                    } label: {
-                        Image(systemName: "arrow.counterclockwise")
-                    }
-                }
-                ToolbarItem(placement: .primaryAction) {
                     Menu {
                         Button("Save current query", systemImage: "bookmark.plus") {
                             saveCurrentQuery()
