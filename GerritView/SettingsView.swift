@@ -46,6 +46,9 @@ internal import Combine
         get { UserDefaults.standard.stringArray(forKey: "settingsSavedFilters") ?? [] }
         set { UserDefaults.standard.set(newValue, forKey: "settingsSavedFilters") }
     }
+
+    // A search request handed from a deep view back to the change list.
+    var pendingSearch: String?
     
     init() {
         gerritUrl = storage.gerritUrl

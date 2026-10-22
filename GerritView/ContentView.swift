@@ -21,14 +21,6 @@ extension View {
     }
 }
 
-struct AccountInfoView: View {
-    var id: Int
-
-    var body: some View {
-        Text(String(id))
-    }
-}
-
 struct ChangeRoute: Hashable {
     let changeId: String
 }
@@ -47,11 +39,24 @@ struct ContentView: View {
                     if components?.host == "change" {
                         path.append(ChangeRoute(changeId: String((components?.path ?? "").dropFirst())))
                     } else if let userId = Int(components?.host ?? "") {
-                        path.append(AccountId(accountId: userId))
+                        // Navigate to the change list showing the changes
+                        // owned by the account behind the link.
+                        Task {
+                            guard let account = try? await fetchAccount(
+                                settings: settings, accountId: userId) else {
+                                return
+                            }
+                            if let email = account.email {
+                                settings.pendingSearch = "owner:" + email
+                            } else if let username = account.username {
+                                settings.pendingSearch = "owner:" + username
+                            } else {
+                                return
+                            }
+                            path = NavigationPath()
+                        }
                     }
                 }
-            }.navigationDestination(for: AccountId.self) { id in
-                AccountInfoView(id: id.accountId)
             }.navigationDestination(for: ChangeRoute.self) { route in
                 ChangePageView(changeId: route.changeId)
             }

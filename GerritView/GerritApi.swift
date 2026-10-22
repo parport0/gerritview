@@ -145,10 +145,6 @@ public struct AttentionSetEntry: Codable {
     }
 }
 
-struct AccountId: Hashable {
-    let accountId: Int
-}
-
 public struct AccountInfo: Codable, Equatable {
     let accountId: Int?
     let name: String?
@@ -794,6 +790,11 @@ public func decodeGerritChangeCommentsResponse(from data: Data) throws -> [Strin
 public func decodeGerritFileDiffResponse(from data: Data) throws -> DiffInfo {
     let decoder = setupJsonDecoder()
     return try decoder.decode(DiffInfo.self, from: stripXssiPrefix(data))
+}
+
+public func decodeGerritAccountResponse(from data: Data) throws -> AccountInfo {
+    let decoder = setupJsonDecoder()
+    return try decoder.decode(AccountInfo.self, from: stripXssiPrefix(data))
 }
 
 // Decodes base64 file content and returns `count` lines starting at the

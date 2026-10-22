@@ -120,6 +120,23 @@ func composeChangeCommentsGerritUrl(settings: Settings, change: String) -> URL {
     return url
 }
 
+func composeAccountGerritUrl(settings: Settings, accountId: Int) -> URL {
+    var (url, queryItems) = composeCommonPartOfGerritUrl(settings: settings)
+
+    var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)!
+    urlComponents.percentEncodedPath = url.path() + "/accounts/" + String(accountId)
+    url = urlComponents.url!
+
+    url.append(queryItems: queryItems)
+    return url
+}
+
+func fetchAccount(settings: Settings, accountId: Int) async throws -> AccountInfo {
+    let queryUrl = composeAccountGerritUrl(settings: settings, accountId: accountId)
+    let data = try await fetchGerritData(from: queryUrl)
+    return try decodeGerritAccountResponse(from: data)
+}
+
 @Observable class GerritFileDiffViewModel {
     enum State {
         case empty

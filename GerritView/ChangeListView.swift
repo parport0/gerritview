@@ -136,6 +136,12 @@ struct ChangeListView: View {
                     }
                 }
             }
+            .onChange(of: settings.pendingSearch) { _, query in
+                if let query {
+                    applySavedFilter(query)
+                    settings.pendingSearch = nil
+                }
+            }
             .alert("Communication failure", isPresented: $gerritChangesModel.showAlert, presenting: gerritChangesModel.errorMessage) { _ in
                 Button("Dismiss") {  }
             } message: { details in
