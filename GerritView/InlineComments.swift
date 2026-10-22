@@ -171,11 +171,6 @@ func groupCommentThreads(_ comments: [CommentInfo]) -> [CommentThread] {
     }
 }
 
-// Threads rooted on the patch set instead of a file (the "/PATCHSET_LEVEL" pseudo-path).
-func patchsetLevelThreads(_ commentsByFile: [String: [CommentInfo]]) -> [CommentThread] {
-    return groupCommentThreads(commentsByFile["/PATCHSET_LEVEL"] ?? [])
-}
-
 // Comments belonging to the current patch set, unless older ones were
 // requested. Comments without a patch set count as current; file entries
 // left without comments are dropped.
@@ -219,6 +214,43 @@ extension CommentInfo {
     var isFileComment: Bool {
         return endLine == nil || endLine == 0
     }
+
+    // The map form of the comments response keeps the path in the map keys,
+    // so it is attached to every comment here.
+    func withPath(_ path: String) -> CommentInfo {
+        return CommentInfo(
+            id: id,
+            patchSet: patchSet,
+            path: path,
+            side: side,
+            parentNumber: parentNumber,
+            line: line,
+            range: range,
+            inReplyTo: inReplyTo,
+            message: message,
+            updated: updated,
+            author: author,
+            tag: tag,
+            unresolved: unresolved,
+            changeMessageId: changeMessageId
+        )
+    }
+}
+
+// Groups the published inline comments by the change message that published
+// them; the server links every comment to its message. Threads without a
+// linked message are not shown in the timeline.
+func threadsForChangeMessages(_ commentsByFile: [String: [CommentInfo]]) -> [String: [CommentThread]] {
+    var byMessage: [String: [CommentInfo]] = [:]
+    for (path, comments) in commentsByFile {
+        for comment in comments {
+            guard let messageId = comment.changeMessageId else {
+                continue
+            }
+            byMessage[messageId, default: []].append(comment.withPath(path))
+        }
+    }
+    return byMessage.mapValues { groupCommentThreads($0) }
 }
 
 // The parent commit the comments belong to, for merge commits. Comments on

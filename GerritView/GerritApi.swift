@@ -595,6 +595,7 @@ public struct CommentInfo: Codable, Identifiable, Equatable {
     let author: AccountInfo?
     let tag: String?
     let unresolved: Bool?
+    let changeMessageId: String?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -610,6 +611,7 @@ public struct CommentInfo: Codable, Identifiable, Equatable {
         case author
         case tag
         case unresolved
+        case changeMessageId = "change_message_id"
     }
 
     // side defaults to REVISION when unset

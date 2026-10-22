@@ -118,36 +118,6 @@ struct CommitFileRowView: View {
     }
 }
 
-struct PatchsetCommentsView: View {
-    let threads: [CommentThread]
-
-    var body: some View {
-        if !threads.isEmpty {
-            VStack(alignment: .leading) {
-                Text("Patchset comments").font(.headline)
-                ForEach(threads, id: \.comments.first?.id) { thread in
-                    ForEach(thread.comments, id: \.id) { comment in
-                        VStack(alignment: .leading) {
-                            HStack {
-                                UserpicView(account: comment.author, size: 16)
-                                Text(comment.author?.Name() ?? "Unknown").font(.footnote)
-                                if let patchSet = comment.patchSet {
-                                    Text("PS\(patchSet)").font(.footnote)
-                                }
-                                Text(String(comment.updated.prefix(19))).font(.footnote)
-                            }
-                            Text(verbatim: comment.message ?? "").font(.footnote)
-                        }
-                    }
-                }
-            }
-            .padding(4)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(UIColor.secondarySystemBackground))
-        }
-    }
-}
-
 struct RequirementBadgeView: View {
     let name: String
     let status: SubmitRequirementResultStatus
@@ -348,7 +318,8 @@ struct CommentTextViewRepresentable: UIViewRepresentable {
     }
 
     private func processString(str: String) -> NSAttributedString {
-        let (cleanedString, _) = str.extractGerritVotePrefix()
+        let (voteString, _) = str.extractGerritVotePrefix()
+        let cleanedString = voteString.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let attributedString = NSMutableAttributedString(string: cleanedString)
 
@@ -430,6 +401,7 @@ struct CommentTextViewRepresentable: UIViewRepresentable {
 
 struct CommitCommentsListView: View {
     let comments: [ChangeMessageInfo]?
+    let threadsByMessage: [String: [CommentThread]]
     @Environment(Settings.self) var settings: Settings
 
     var body: some View {
@@ -454,7 +426,12 @@ struct CommitCommentsListView: View {
                             Text(author)
                                 .font(.footnote)
                         }
-                        CommentText(message: message)
+                            VStack(alignment: .leading) {
+                                CommentText(message: message)
+                            ForEach(threadsByMessage[message.id] ?? [], id: \.comments.first?.id) { thread in
+                                CommentThreadRow(thread: thread)
+                            }
+                        }
                     }
                     if message.id != comments.first?.id {
                         Divider()
@@ -543,10 +520,12 @@ struct ChangePageLoadedView: View {
                         files: currentRevisionContent.files,
                         commentsByFile: visibleComments
                     )
-                    PatchsetCommentsView(threads: patchsetLevelThreads(visibleComments))
                 }
 
-                CommitCommentsListView(comments: visibleMessages)
+                CommitCommentsListView(
+                    comments: visibleMessages,
+                    threadsByMessage: threadsForChangeMessages(visibleComments)
+                )
             }.padding(4)
         }
     }

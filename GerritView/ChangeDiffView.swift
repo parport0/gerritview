@@ -216,10 +216,22 @@ struct CommentThreadRow: View {
     let thread: CommentThread
 
     private func place(_ comment: CommentInfo) -> String {
-        let side = comment.effectiveSide == .parent
-            ? (comment.parentNumber.map { "parent \($0)" } ?? "before")
-            : "after"
-        return comment.isFileComment ? "file" : "\(side) line \(comment.endLine ?? 0)"
+        if comment.path == "/PATCHSET_LEVEL" {
+            return ""
+        }
+        var parts: [String] = []
+        if let path = comment.path {
+            parts.append(path)
+        }
+        if comment.isFileComment {
+            parts.append("file")
+        } else {
+            let side = comment.effectiveSide == .parent
+                ? (comment.parentNumber.map { "parent \($0)" } ?? "before")
+                : "after"
+            parts.append("\(side) line \(comment.endLine ?? 0)")
+        }
+        return parts.joined(separator: " ")
     }
 
     var body: some View {

@@ -165,18 +165,20 @@ struct InlineCommentsTests {
     func comment(
         id: String,
         patchSet: Int? = 1,
+        path: String? = nil,
         line: Int? = nil,
         range: CommentRange? = nil,
         side: CommentSide? = nil,
         parent: Int? = nil,
         reply: String? = nil,
         updated: String = "2024-01-01 10:00:00.000000000",
-        message: String = "msg"
+        message: String = "msg",
+        changeMessageId: String? = nil
     ) -> CommentInfo {
         return CommentInfo(
             id: id,
             patchSet: patchSet,
-            path: nil,
+            path: path,
             side: side,
             parentNumber: parent,
             line: line,
@@ -186,7 +188,8 @@ struct InlineCommentsTests {
             updated: updated,
             author: nil,
             tag: nil,
-            unresolved: nil
+            unresolved: nil,
+            changeMessageId: changeMessageId
         )
     }
 
@@ -352,22 +355,25 @@ struct InlineCommentsTests {
         ]) == 2)
     }
 
-    @Test func patchsetLevelThreadsPulledFromPseudoPath() {
+    @Test func changeMessageThreadsGroupByMessage() {
         let commentsByFile = [
-            "f.txt": [comment(id: "f1", line: 1)],
-            "/PATCHSET_LEVEL": [
-                comment(id: "p1", updated: "2024-01-01 10:00:00.000000000"),
-                comment(id: "p2", reply: "p1", updated: "2024-01-01 11:00:00.000000000")
+            "f.txt": [
+                comment(id: "c1", path: "f.txt", line: 1, changeMessageId: "m1"),
+                comment(id: "c2", path: "f.txt", reply: "c1", updated: "2024-01-01 11:00:00.000000000", changeMessageId: "m1"),
+                comment(id: "c3", path: "f.txt", line: 2, changeMessageId: "m2")
             ]
         ]
-        let threads = patchsetLevelThreads(commentsByFile)
-        #expect(threads.count == 1)
-        #expect(threads[0].comments.map { $0.id } == ["p1", "p2"])
+        let threads = threadsForChangeMessages(commentsByFile)
+        #expect(threads.count == 2)
+        #expect(threads["m1"]?.count == 1)
+        #expect(threads["m1"]?[0].comments.map { $0.id } == ["c1", "c2"])
+        #expect(threads["m2"]?.count == 1)
+        #expect(threads["m2"]?[0].comments[0].path == "f.txt")
     }
 
-    @Test func patchsetLevelThreadsEmptyWithoutPseudoPath() {
-        #expect(patchsetLevelThreads(["f.txt": [comment(id: "f1")]]).isEmpty)
-        #expect(patchsetLevelThreads([:]).isEmpty)
+    @Test func changeMessageThreadsIgnoreCommentsWithoutMessage() {
+        #expect(threadsForChangeMessages(["f.txt": [comment(id: "f1", line: 1)]]).isEmpty)
+        #expect(threadsForChangeMessages([:]).isEmpty)
     }
 
     @Test func mergeCommitCommentAnchorsOnParentSideOfItsDiff() {
