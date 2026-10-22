@@ -29,35 +29,45 @@ struct ContentView: View {
     @State var settings = Settings()
     @State private var path = NavigationPath()
 
+    private func handleGerritURL(_ url: URL) {
+        let components = URLComponents(string: url.absoluteString)
+        if components?.scheme == "gerritview" {
+            if components?.host == "change" {
+                path.append(ChangeRoute(changeId: String((components?.path ?? "").dropFirst())))
+            } else if let userId = Int(components?.host ?? "") {
+                // Navigate to the change list showing the changes
+                // owned by the account behind the link.
+                Task {
+                    guard let account = try? await fetchAccount(
+                        settings: settings, accountId: userId) else {
+                        return
+                    }
+                    if let email = account.email {
+                        settings.pendingSearch = "owner:" + email
+                    } else if let username = account.username {
+                        settings.pendingSearch = "owner:" + username
+                    } else {
+                        return
+                    }
+                    path = NavigationPath()
+                }
+            }
+        }
+    }
+
     var body: some View {
         NavigationStack(path: $path) {
             VStack {
                 ChangeListView()
             }.onOpenURL { url in
-                let components = URLComponents(string: url.absoluteString)
-                if components?.scheme == "gerritview" {
-                    if components?.host == "change" {
-                        path.append(ChangeRoute(changeId: String((components?.path ?? "").dropFirst())))
-                    } else if let userId = Int(components?.host ?? "") {
-                        // Navigate to the change list showing the changes
-                        // owned by the account behind the link.
-                        Task {
-                            guard let account = try? await fetchAccount(
-                                settings: settings, accountId: userId) else {
-                                return
-                            }
-                            if let email = account.email {
-                                settings.pendingSearch = "owner:" + email
-                            } else if let username = account.username {
-                                settings.pendingSearch = "owner:" + username
-                            } else {
-                                return
-                            }
-                            path = NavigationPath()
-                        }
-                    }
+                handleGerritURL(url)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: CommentTextViewRepresentable.linkTappedNotification)) { note in
+                if let url = note.object as? URL {
+                    handleGerritURL(url)
                 }
-            }.navigationDestination(for: ChangeRoute.self) { route in
+            }
+            .navigationDestination(for: ChangeRoute.self) { route in
                 ChangePageView(changeId: route.changeId)
             }
             .toolbar {

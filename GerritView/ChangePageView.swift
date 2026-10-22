@@ -339,6 +339,10 @@ struct CommentText: View {
 struct CommentTextViewRepresentable: UIViewRepresentable {
     typealias UIViewType = UITextView
 
+    // Message body links are routed to the root URL handler through this
+    // notification.
+    static let linkTappedNotification = Notification.Name("GerritViewLinkTapped")
+
     var message: ChangeMessageInfo
     @Binding var calculatedHeight: CGFloat
 
@@ -354,6 +358,13 @@ struct CommentTextViewRepresentable: UIViewRepresentable {
         textField.isScrollEnabled = false
         textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         textField.textContainer.lineBreakMode = .byCharWrapping
+
+        // Link clicks are handled explicitly; the default UITextView link
+        // interaction is unreliable here.
+        let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
+        tap.delegate = context.coordinator
+        textField.addGestureRecognizer(tap)
+
         //textField.textLayoutManager!.delegate = commentLayoutDelegate
         return textField
     }
@@ -436,7 +447,46 @@ struct CommentTextViewRepresentable: UIViewRepresentable {
         Coordinator()
     }
 
-    final class Coordinator: NSObject, UITextViewDelegate {
+    final class Coordinator: NSObject, UITextViewDelegate, UIGestureRecognizerDelegate {
+        // Only claim the click when it lands on a link, so plain text keeps
+        // its default selection behavior.
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            guard let textView = gestureRecognizer.view as? UITextView else {
+                return false
+            }
+            return linkURL(at: gestureRecognizer.location(in: textView), in: textView) != nil
+        }
+
+        @objc func handleTap(_ gesture: UITapGestureRecognizer) {
+            guard let textView = gesture.view as? UITextView,
+                  let url = linkURL(at: gesture.location(in: textView), in: textView) else {
+                return
+            }
+            if url.scheme == "gerritview" {
+                NotificationCenter.default.post(name: CommentTextViewRepresentable.linkTappedNotification, object: url)
+            } else {
+                // External URLs go to the system browser.
+                UIApplication.shared.open(url)
+            }
+        }
+
+        private func linkURL(at point: CGPoint, in textView: UITextView) -> URL? {
+            guard let position = textView.closestPosition(to: point) else {
+                return nil
+            }
+            let index = textView.offset(from: textView.beginningOfDocument, to: position)
+            guard index >= 0, index < textView.attributedText.length else {
+                return nil
+            }
+            switch textView.attributedText.attribute(.link, at: index, effectiveRange: nil) {
+            case let url as URL:
+                return url
+            case let string as String:
+                return URL(string: string)
+            default:
+                return nil
+            }
+        }
     }
 }
 
