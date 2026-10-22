@@ -455,6 +455,7 @@ struct ChangePageLoadedView: View {
     let change: GerritChange
     let commentsByFile: [String: [CommentInfo]]
     @State private var showOlderPatchsets = false
+    @Environment(Settings.self) var settings: Settings
 
     private var currentPatchSet: Int? {
         return change.currentRevisionNumber
@@ -508,6 +509,10 @@ struct ChangePageLoadedView: View {
             }
         }
         return result
+    }
+
+    private var changeUrl: String {
+        return "\(settings.gerritUrl)/c/\(change.project)/+/\(change.number)"
     }
 
     var body: some View {
@@ -565,6 +570,11 @@ struct ChangePageLoadedView: View {
                     threadsByMessage: threadsByMessage
                 )
             }.padding(4)
+        }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                ShareLink(item: changeUrl)
+            }
         }
     }
 }
