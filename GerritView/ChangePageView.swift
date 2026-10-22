@@ -636,7 +636,7 @@ struct ChangePageView: View {
             .foregroundStyle(.white)
             .background(Color.green, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     case .new:
-        Text("NEW")
+        Text("Active")
             .padding(4)
             .fontWeight(.bold)
             .font(.subheadline)
