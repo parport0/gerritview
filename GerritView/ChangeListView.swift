@@ -48,15 +48,25 @@ struct ChangeRowView: View {
     }
 }
 
+// Prepends the query to the recent searches, deduplicated, keeping at most
+// 10 entries.
+func pushRecentQuery(_ query: String, into recents: [String]) -> [String] {
+    var result = recents.filter { $0 != query }
+    result.insert(query, at: 0)
+    return Array(result.prefix(10))
+}
+
 struct ChangeListView: View {
     @State private var gerritChangesModel = GerritChangesListViewModel()
     @Environment(Settings.self) var settings: Settings
     @State private var searchText = ""
     @State private var queryText = ""
     @State private var savedFilters: [String] = UserDefaults.standard.stringArray(forKey: "settingsSavedFilters") ?? []
+    @State private var recentQueries: [String] = UserDefaults.standard.stringArray(forKey: "settingsRecentQueries") ?? []
     @State private var showingQueryDeletion = false
 
     private func applySavedFilter(_ filter: String) {
+        recordSearch(filter)
         searchText = filter
         queryText = filter
         gerritChangesModel.clearChanges()
@@ -65,10 +75,20 @@ struct ChangeListView: View {
         }
     }
 
+    private func recordSearch(_ query: String) {
+        // Bookmarked queries stay out of the recents to avoid duplicates.
+        guard !query.isEmpty, !savedFilters.contains(query) else { return }
+        recentQueries = pushRecentQuery(query, into: recentQueries)
+        settings.recentQueries = recentQueries
+    }
+
     private func saveCurrentQuery() {
         guard !queryText.isEmpty, !savedFilters.contains(queryText) else { return }
         savedFilters.append(queryText)
         settings.savedFilters = savedFilters
+        // Keep bookmarked queries out of the recents.
+        recentQueries.removeAll { $0 == queryText }
+        settings.recentQueries = recentQueries
     }
 
     var body: some View {
@@ -100,6 +120,15 @@ struct ChangeListView: View {
                             saveCurrentQuery()
                         }
                         .disabled(queryText.isEmpty)
+                        if !recentQueries.isEmpty {
+                            Section("Recent searches") {
+                                ForEach(recentQueries, id: \.self) { filter in
+                                    Button(filter) {
+                                        applySavedFilter(filter)
+                                    }
+                                }
+                            }
+                        }
                         Section("Saved queries") {
                             ForEach(savedFilters, id: \.self) { filter in
                                 Button(filter) {
@@ -125,6 +154,7 @@ struct ChangeListView: View {
             .textInputAutocapitalization(.never)
             .onSubmit(of: .search) {
                 queryText = searchText
+                recordSearch(queryText)
                 gerritChangesModel.clearChanges()
             }
             .onChange(of: searchText) { _, newValue in

@@ -47,6 +47,13 @@ internal import Combine
         set { UserDefaults.standard.set(newValue, forKey: "settingsSavedFilters") }
     }
 
+    // Recently applied search queries, newest first; the view mirrors this
+    // into local state.
+    var recentQueries: [String] {
+        get { UserDefaults.standard.stringArray(forKey: "settingsRecentQueries") ?? [] }
+        set { UserDefaults.standard.set(newValue, forKey: "settingsRecentQueries") }
+    }
+
     // A search request handed from a deep view back to the change list.
     var pendingSearch: String?
     

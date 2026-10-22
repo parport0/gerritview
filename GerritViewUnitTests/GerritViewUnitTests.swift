@@ -643,6 +643,23 @@ struct CommentTimestampTests {
     }
 }
 
+struct RecentSearchTests {
+    @Test func deduplicatesAndFrontInserts() {
+        let recents = pushRecentQuery("is:open", into: ["owner:a@b.c", "is:open"])
+        #expect(recents == ["is:open", "owner:a@b.c"])
+    }
+
+    @Test func cappedAtTen() {
+        var recents: [String] = []
+        for i in 0..<15 {
+            recents = pushRecentQuery("q\(i)", into: recents)
+        }
+        #expect(recents.count == 10)
+        #expect(recents.first == "q14")
+        #expect(recents.last == "q5")
+    }
+}
+
 extension DiffEntry {
     var thread: CommentThread? {
         if case .comments(let t) = self {
