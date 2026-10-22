@@ -39,6 +39,7 @@ I really wanted to see the statuses of changes from the change list on mobile. G
 * Consider adding suggestions for the search bar, like on the web??
 * Add "/a/" to the Gerrit instance URL when using authentication
 * Normalize Gerrit instance URLs (with or without https specified, with or without a slash in the end specified)
+* Display adding people to reviewers/CC
 * Unwrap all optionals properly, pls no crash
 * [x] Give better diagnostics on network errors
 
