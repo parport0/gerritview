@@ -427,6 +427,7 @@ struct CommentTextViewRepresentable: UIViewRepresentable {
 struct CommitCommentsListView: View {
     let comments: [ChangeMessageInfo]?
     let threadsByMessage: [String: [CommentThread]]
+    var nav: CommentThreadNavContext? = nil
     @Environment(Settings.self) var settings: Settings
 
     var body: some View {
@@ -458,7 +459,7 @@ struct CommitCommentsListView: View {
                         VStack(alignment: .leading) {
                             CommentText(message: message)
                             ForEach(threadsByMessage[message.id] ?? [], id: \.comments.first?.id) { thread in
-                                CommentThreadRow(thread: thread)
+                                CommentThreadRow(thread: thread, nav: nav)
                             }
                         }
                     }
@@ -506,6 +507,28 @@ struct ChangePageLoadedView: View {
     private var hasHiddenMessages: Bool {
         let messages = change.messages ?? []
         return messages.count > messagesVisible(showOlder: false).count
+    }
+
+    // Navigating from a comment row to the file the comment is anchored to.
+    private var commentNavContext: CommentThreadNavContext? {
+        guard let revisions = change.revisions,
+              let currentRevision = change.currentRevision,
+              let currentRevisionContent = revisions[currentRevision]
+        else {
+            return nil
+        }
+        var paths = Set<String>()
+        if let files = currentRevisionContent.files {
+            paths.formUnion(files.keys)
+        }
+        paths.formUnion(commentsByFile.keys.filter { !$0.hasPrefix("/") })
+        return CommentThreadNavContext(
+            changeId: change.tripletId,
+            revisionId: currentRevision,
+            paths: paths.sorted(),
+            commentsByFile: visibleComments,
+            olderCommentsByFile: olderComments
+        )
     }
 
     // Comments from patch sets older than the current one. Shown even when
@@ -591,7 +614,8 @@ struct ChangePageLoadedView: View {
 
                 CommitCommentsListView(
                     comments: messagesVisible(showOlder: showOlderPatchsets),
-                    threadsByMessage: threadsByMessage
+                    threadsByMessage: threadsByMessage,
+                    nav: commentNavContext
                 )
             }.padding(4)
         }

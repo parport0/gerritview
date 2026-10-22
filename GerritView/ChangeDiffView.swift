@@ -285,28 +285,52 @@ struct SkippedLinesRow: View {
     }
 }
 
+// Everything needed to navigate from a comment row to the diff view of the
+// file the comment is anchored to.
+struct CommentThreadNavContext {
+    let changeId: String
+    let revisionId: String
+    let paths: [String]
+    let commentsByFile: [String: [CommentInfo]]
+    let olderCommentsByFile: [String: [CommentInfo]]
+}
+
 struct CommentThreadRow: View {
     let thread: CommentThread
     var note: String? = nil
+    var nav: CommentThreadNavContext? = nil
 
-    private func place(_ comment: CommentInfo) -> String {
+    private func pathMarker(_ comment: CommentInfo) -> String? {
+        guard let path = comment.path, path != "/PATCHSET_LEVEL" else {
+            return nil
+        }
+        return path
+    }
+
+    private func positionMarker(_ comment: CommentInfo) -> String {
         if comment.path == "/PATCHSET_LEVEL" {
             return ""
         }
+        if comment.isFileComment {
+            return "file"
+        }
+        // Before-side lines sit in the left diff column, after-side in
+        // the right one.
+        let arrow = comment.effectiveSide == .parent ? "←" : "→"
+        let side = comment.effectiveSide == .parent
+            ? (comment.parentNumber.map { "parent \($0)" } ?? "before")
+            : "after"
+        return "\(arrow) \(side) line \(comment.endLine ?? 0)"
+    }
+
+    private func place(_ comment: CommentInfo) -> String {
         var parts: [String] = []
-        if let path = comment.path {
+        if let path = pathMarker(comment) {
             parts.append(path)
         }
-        if comment.isFileComment {
-            parts.append("file")
-        } else {
-            // Before-side lines sit in the left diff column, after-side in
-            // the right one.
-            let arrow = comment.effectiveSide == .parent ? "←" : "→"
-            let side = comment.effectiveSide == .parent
-                ? (comment.parentNumber.map { "parent \($0)" } ?? "before")
-                : "after"
-            parts.append("\(arrow) \(side) line \(comment.endLine ?? 0)")
+        let position = positionMarker(comment)
+        if !position.isEmpty {
+            parts.append(position)
         }
         return parts.joined(separator: " ")
     }
@@ -335,7 +359,25 @@ struct CommentThreadRow: View {
                         if let patchSet = comment.patchSet {
                             Text("PS\(patchSet)").font(.footnote).foregroundStyle(.secondary)
                         }
-                        if !place(comment).isEmpty {
+                        if let path = pathMarker(comment), let nav {
+                            NavigationLink {
+                                ChangeDiffView(
+                                    changeId: nav.changeId,
+                                    revisionId: nav.revisionId,
+                                    fileId: path,
+                                    commentsByFile: nav.commentsByFile,
+                                    olderCommentsByFile: nav.olderCommentsByFile,
+                                    paths: nav.paths
+                                )
+                            } label: {
+                                Text(path).font(.footnote)
+                            }
+                            if !positionMarker(comment).isEmpty {
+                                Text(positionMarker(comment))
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } else if !place(comment).isEmpty {
                             Text(place(comment)).font(.footnote).foregroundStyle(.secondary)
                         }
                         if let date = comment.date {
