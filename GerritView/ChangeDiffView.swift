@@ -48,17 +48,6 @@ struct ChangeDiffView: View {
             case .loaded(let diff):
                 ScrollView {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(diff.changeType.rawValue).font(.headline)
-                        Text(
-                            verbatim: diff.diffHeader[2...3].joined(separator: "\n")
-                        ).fontDesign(.monospaced).font(.footnote).fontWeight(.semibold).frame(
-                            maxWidth: .infinity,
-                            alignment: .leading
-                        )
-                        .padding(4)
-                        .background(
-                            Color(UIColor.systemGroupedBackground)
-                        )
                         DiffContentView(
                             entries: expandDiffLines(
                                 diff,
@@ -75,6 +64,18 @@ struct ChangeDiffView: View {
             }
         }
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                if case .loaded(let diff) = gerritDiffModel.state {
+                    VStack(alignment: .center, spacing: 0) {
+                        Text(verbatim: activeFile)
+                            .font(.system(.footnote, design: .monospaced))
+                            .lineLimit(1)
+                        Text(diff.changeType.rawValue)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
             ToolbarItemGroup(placement: .primaryAction) {
                 Button {
                     if let index = fileIndex, index > 0 {
