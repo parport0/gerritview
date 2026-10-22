@@ -506,6 +506,36 @@ struct DiffUrlTests {
     }
 }
 
+struct BinarySizeTests {
+    private func file(_ sizeDelta: Int64) -> FileInfo {
+        return FileInfo(
+            status: nil, binary: true, oldPath: nil, linesInserted: nil, linesDeleted: nil,
+            sizeDelta: sizeDelta, size: 0, oldMode: nil, newMode: nil, oldSha: nil, newSha: nil
+        )
+    }
+
+    @Test func formatsMegabytes() {
+        #expect(file(1_397_990).sizeDeltaText == "+1.4 MB")
+    }
+
+    @Test func formatsGigabytes() {
+        #expect(file(1_500_000_000).sizeDeltaText == "+1.5 GB")
+    }
+
+    @Test func formatsKilobytes() {
+        #expect(file(50_000).sizeDeltaText == "+50.0 kB")
+        #expect(file(51_200).sizeDeltaText == "+51.2 kB")
+    }
+
+    @Test func formatsNegativeBytes() {
+        #expect(file(-244).sizeDeltaText == "-244 bytes")
+    }
+
+    @Test func formatsZero() {
+        #expect(file(0).sizeDeltaText == "+0 bytes")
+    }
+}
+
 extension DiffEntry {
     var thread: CommentThread? {
         if case .comments(let t) = self {

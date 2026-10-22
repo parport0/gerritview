@@ -77,6 +77,21 @@ struct CommitFilesListView: View {
     }
 }
 
+extension FileInfo {
+    var sizeDeltaText: String {
+        let value = abs(sizeDelta)
+        let sign = sizeDelta < 0 ? "-" : "+"
+        let units: [(Int64, String)] = [(1_000_000_000, "GB"), (1_000_000, "MB"), (1_000, "kB")]
+        for (factor, unit) in units {
+            if value >= factor {
+                let size = Double(value) / Double(factor)
+                return sign + String(format: "%.1f", size) + " " + unit
+            }
+        }
+        return sign + String(value) + " bytes"
+    }
+}
+
 struct CommitFileRowView: View {
     let path: String
     let file: FileInfo?
@@ -96,7 +111,7 @@ struct CommitFileRowView: View {
 
                 if let file {
                     if file.binary != nil {
-                        Text("binary \(String(file.sizeDelta))")
+                        Text("binary \(file.sizeDeltaText)")
                             .foregroundStyle(Color(uiColor: .secondaryLabel))
                             .font(.footnote)
                     } else {
