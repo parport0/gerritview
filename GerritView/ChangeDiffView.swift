@@ -299,10 +299,13 @@ struct CommentThreadRow: View {
         if comment.isFileComment {
             parts.append("file")
         } else {
+            // Before-side lines sit in the left diff column, after-side in
+            // the right one.
+            let arrow = comment.effectiveSide == .parent ? "←" : "→"
             let side = comment.effectiveSide == .parent
                 ? (comment.parentNumber.map { "parent \($0)" } ?? "before")
                 : "after"
-            parts.append("\(side) line \(comment.endLine ?? 0)")
+            parts.append("\(arrow) \(side) line \(comment.endLine ?? 0)")
         }
         return parts.joined(separator: " ")
     }
