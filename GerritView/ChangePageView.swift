@@ -1,20 +1,31 @@
 import SwiftUI
 
+// Detects URLs in plain text and turns them into links that SwiftUI renders
+// as tappable.
+func linkifiedCommitMessage(_ message: String) -> AttributedString {
+    let attributed = NSMutableAttributedString(string: message)
+    let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+    let full = NSRange(location: 0, length: (message as NSString).length)
+    for match in detector?.matches(in: message, options: [], range: full) ?? [] {
+        if let url = match.url {
+            attributed.addAttribute(.link, value: url, range: match.range)
+        }
+    }
+    return AttributedString(attributed)
+}
+
 struct CommitMessageView: View {
     var commit: CommitInfo?
-    
+
     var body: some View {
-        if commit?.message != nil {
-            Text(
-                verbatim: commit!.message!
-            ).fontDesign(.monospaced).font(.footnote).fontWeight(.semibold).frame(
-                maxWidth: .infinity,
-                alignment: .leading
-            )
-            .padding(4)
-            .background(
-                Color(UIColor.systemGroupedBackground)
-            )
+        if let message = commit?.message {
+            Text(linkifiedCommitMessage(message))
+                .fontDesign(.monospaced)
+                .font(.footnote)
+                .fontWeight(.semibold)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(4)
+                .background(Color(UIColor.systemGroupedBackground))
         }
     }
 }

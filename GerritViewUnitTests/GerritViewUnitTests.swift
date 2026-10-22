@@ -577,6 +577,20 @@ struct BinarySizeTests {
     }
 }
 
+struct CommitMessageLinkTests {
+    @Test func detectsUrl() {
+        let attributed = linkifiedCommitMessage("See https://example.com/x for details")
+        let links = attributed.runs.compactMap { $0.link }
+        #expect(links.count == 1)
+        #expect(links[0].absoluteString == "https://example.com/x")
+    }
+
+    @Test func plainTextHasNoLinks() {
+        let attributed = linkifiedCommitMessage("No links here")
+        #expect(attributed.runs.compactMap { $0.link }.isEmpty)
+    }
+}
+
 extension DiffEntry {
     var thread: CommentThread? {
         if case .comments(let t) = self {
