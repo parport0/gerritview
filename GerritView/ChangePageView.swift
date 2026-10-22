@@ -519,8 +519,14 @@ struct CommitCommentsListView: View {
                                 Text("PS\(message.revisionNumber!)")
                                     .font(.footnote)
                             }
-                            Text(author)
-                                .font(.footnote)
+                            if let accountId = message.author?.accountId {
+                                Link(destination: URL(string: "gerritview://\(accountId)")!) {
+                                    Text(author).font(.footnote)
+                                }
+                            } else {
+                                Text(author)
+                                    .font(.footnote)
+                            }
                         }
                         VStack(alignment: .leading) {
                             CommentText(message: message)
@@ -637,7 +643,13 @@ struct ChangePageLoadedView: View {
                     Text("#" + String(change.number))
                     HStack(spacing: 4) {
                         UserpicView(account: change.owner, size: 16)
-                        Text(change.owner.Name())
+                        if let id = change.owner.accountId {
+                            Link(destination: URL(string: "gerritview://\(id)")!) {
+                                Text(change.owner.Name())
+                            }
+                        } else {
+                            Text(change.owner.Name())
+                        }
                     }
                     .font(.subheadline)
                     Text("\(Image(systemName: "folder"))\(change.project)")

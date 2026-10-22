@@ -355,7 +355,13 @@ struct CommentThreadRow: View {
                         if comment.unresolved == true {
                             Text("●").font(.footnote).foregroundStyle(.orange)
                         }
-                        Text(comment.author?.Name() ?? "Unknown").font(.footnote)
+                        if let accountId = comment.author?.accountId {
+                            Link(destination: URL(string: "gerritview://\(accountId)")!) {
+                                Text(comment.author?.Name() ?? "Unknown").font(.footnote)
+                            }
+                        } else {
+                            Text(comment.author?.Name() ?? "Unknown").font(.footnote)
+                        }
                         if let patchSet = comment.patchSet {
                             Text("PS\(patchSet)").font(.footnote).foregroundStyle(.secondary)
                         }
