@@ -23,11 +23,12 @@ enum DiffEntry: Equatable {
 
 // Expands DiffInfo chunks into a linear list of rendered entries, tracking
 // line numbers on both sides (before = PARENT, after = REVISION). Unchanged
-// stretches farther than `context` lines away from any edit are collapsed;
-// their lines ship with the entry, as current Gerrit servers return the whole
-// file in the diff. Regions collapsed by the server (`skip` chunks) have no
-// local lines and fetch their content on demand.
-func expandDiffLines(_ diff: DiffInfo, context: Int = 10) -> [DiffEntry] {
+// stretches farther than `context` lines away from any edit or from a
+// commented line are collapsed; their lines ship with the entry, as current
+// Gerrit servers return the whole file in the diff. Regions collapsed by the
+// server (`skip` chunks) have no local lines and fetch their content on
+// demand.
+func expandDiffLines(_ diff: DiffInfo, context: Int = 10, commentedLines: Set<Int> = []) -> [DiffEntry] {
     struct Row {
         let beforeNumber: Int?
         let afterNumber: Int?
@@ -65,7 +66,7 @@ func expandDiffLines(_ diff: DiffInfo, context: Int = 10) -> [DiffEntry] {
                     afterNumber: after,
                     text: abLines[i],
                     skip: nil,
-                    pinned: false
+                    pinned: commentedLines.contains(after)
                 ))
             } else {
                 if i < aLines.count {
@@ -137,6 +138,26 @@ func expandDiffLines(_ diff: DiffInfo, context: Int = 10) -> [DiffEntry] {
     }
     flushRun()
     return entries
+}
+
+// Line numbers anchored by inline comments (a range covers every line it
+// spans). Unchanged rows share their numbering on both sides, so one set is
+// enough to keep the rows they anchor visible like changed rows.
+func commentAnchoredLines(_ comments: [CommentInfo]) -> Set<Int> {
+    var lines: Set<Int> = []
+    for comment in comments {
+        if comment.isFileComment {
+            continue
+        }
+        if let range = comment.range {
+            for line in range.startLine...range.endLine {
+                lines.insert(line)
+            }
+        } else if let line = comment.line {
+            lines.insert(line)
+        }
+    }
+    return lines
 }
 
 // Groups comments into reply threads. Comments whose in_reply_to points to

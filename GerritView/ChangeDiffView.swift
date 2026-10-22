@@ -60,7 +60,10 @@ struct ChangeDiffView: View {
                             Color(UIColor.systemGroupedBackground)
                         )
                         DiffContentView(
-                            entries: expandDiffLines(diff),
+                            entries: expandDiffLines(
+                                diff,
+                                commentedLines: commentAnchoredLines(comments + olderComments)
+                            ),
                             comments: comments,
                             olderComments: olderComments,
                             changeId: changeId,

@@ -297,6 +297,47 @@ struct InlineCommentsTests {
         #expect(commentId(of: result.last!) == "x")
     }
 
+    @Test func expandAnchorsCommentedUnchangedLines() {
+        let lines = Array(0..<1000).map { "l\($0 + 1)" }
+        let entries = expandDiffLines(diff([ab(lines)]), commentedLines: [500])
+
+        // The commented line and its vicinity stay visible: lines 490..510.
+        #expect(entries.count == 23)
+        #expect(entries[0] == .skippedLines(beforeStart: 1, afterStart: 1, count: 489, lines: Array(lines[0..<489])))
+        #expect(entries[11] == .line(DiffLine(beforeNumber: 500, afterNumber: 500, text: "l500")))
+        #expect(entries[22] == .skippedLines(beforeStart: 511, afterStart: 511, count: 490, lines: Array(lines[510...])))
+    }
+
+    @Test func expandKeepsVicinityOfCommentedLine() {
+        let lines = Array(0..<30).map { "l\($0 + 1)" }
+        let entries = expandDiffLines(diff([ab(lines)]), commentedLines: [10])
+
+        #expect(entries.count == 21)
+        #expect(entries[0] == .line(DiffLine(beforeNumber: 1, afterNumber: 1, text: "l1")))
+        #expect(entries[19] == .line(DiffLine(beforeNumber: 20, afterNumber: 20, text: "l20")))
+        #expect(entries[20] == .skippedLines(beforeStart: 21, afterStart: 21, count: 10, lines: Array(lines[20...])))
+    }
+
+    @Test func expandAnchorsRangeComments() {
+        let lines = Array(0..<30).map { "l\($0 + 1)" }
+        let range = CommentRange(startLine: 5, startCharacter: 1, endLine: 6, endCharacter: 3)
+        let entries = expandDiffLines(
+            diff([ab(lines)]),
+            commentedLines: commentAnchoredLines([comment(id: "r", range: range)])
+        )
+
+        #expect(entries.count == 17)
+        #expect(entries[16] == .skippedLines(beforeStart: 17, afterStart: 17, count: 14, lines: Array(lines[16...])))
+    }
+
+    @Test func commentAnchoredLinesIgnoreFileComments() {
+        let lines = commentAnchoredLines([
+            comment(id: "f", message: "file-level"),
+            comment(id: "l", line: 7)
+        ])
+        #expect(lines == [7])
+    }
+
     @Test func rangeEndLineAnchorsComment() {
         let entries = expandDiffLines(diff([ab(["l1", "l2", "l3"])]))
         let range = CommentRange(
