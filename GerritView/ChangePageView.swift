@@ -43,14 +43,6 @@ struct CommitFilesListView: View {
         return groupCommentThreads(commentsByFile?[path] ?? []).count
     }
 
-    private func comments(for path: String) -> [CommentInfo] {
-        return commentsByFile?[path] ?? []
-    }
-
-    private func olderComments(for path: String) -> [CommentInfo] {
-        return olderCommentsByFile[path] ?? []
-    }
-
     var body: some View {
         if files != nil || commentsByFile != nil {
             let sortedPaths: [String] = paths
@@ -58,12 +50,13 @@ struct CommitFilesListView: View {
             VStack(alignment: .leading) {
                     ForEach (sortedPaths, id: \.self) { key in
                         NavigationLink(
-                            destination:                             ChangeDiffView(
+                            destination: ChangeDiffView(
                                 changeId: change.tripletId,
                                 revisionId: revision,
                                 fileId: key,
-                                comments: comments(for: key),
-                                olderComments: olderComments(for: key)
+                                commentsByFile: commentsByFile ?? [:],
+                                olderCommentsByFile: olderCommentsByFile,
+                                paths: sortedPaths
                             )
                         ) {
                             CommitFileRowView(

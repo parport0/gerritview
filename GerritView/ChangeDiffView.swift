@@ -4,52 +4,96 @@ struct ChangeDiffView: View {
     let changeId: String
     let revisionId: String
     let fileId: String
-    let comments: [CommentInfo]
-    var olderComments: [CommentInfo] = []
+    let commentsByFile: [String: [CommentInfo]]
+    var olderCommentsByFile: [String: [CommentInfo]] = [:]
+    var paths: [String] = []
 
+    @State private var activeFileId: String? = nil
     @State private var gerritDiffModel = GerritFileDiffViewModel()
     @Environment(Settings.self) var settings: Settings
 
+    private var activeFile: String {
+        return activeFileId ?? fileId
+    }
+
+    private var comments: [CommentInfo] {
+        return commentsByFile[activeFile] ?? []
+    }
+
+    private var olderComments: [CommentInfo] {
+        return olderCommentsByFile[activeFile] ?? []
+    }
+
+    private var fileIndex: Int? {
+        return paths.firstIndex(of: activeFile)
+    }
+
     var body: some View {
-        switch gerritDiffModel.state {
-        case .empty:
-            ProgressView()
-                .task {
-                    await self.gerritDiffModel
-                        .fetchDiff(
-                            settings: settings,
-                            changeId: changeId,
-                            revisionId: String(revisionId),
-                            fileId: fileId,
-                            parentNumber: diffParentNumber(for: comments)
+        Group {
+            switch gerritDiffModel.state {
+            case .empty:
+                ProgressView()
+                    .task {
+                        await self.gerritDiffModel
+                            .fetchDiff(
+                                settings: settings,
+                                changeId: changeId,
+                                revisionId: String(revisionId),
+                                fileId: activeFile,
+                                parentNumber: diffParentNumber(for: comments)
+                            )
+                    }
+            case .failed(let error):
+                Text(error.localizedDescription)
+            case .loaded(let diff):
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(diff.changeType.rawValue).font(.headline)
+                        Text(
+                            verbatim: diff.diffHeader[2...3].joined(separator: "\n")
+                        ).fontDesign(.monospaced).font(.footnote).fontWeight(.semibold).frame(
+                            maxWidth: .infinity,
+                            alignment: .leading
                         )
-                }
-        case .failed(let error):
-            Text(error.localizedDescription)
-        case .loaded(let diff):
-            ScrollView {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(diff.changeType.rawValue).font(.headline)
-                    Text(
-                        verbatim: diff.diffHeader[2...3].joined(separator: "\n")
-                    ).fontDesign(.monospaced).font(.footnote).fontWeight(.semibold).frame(
-                        maxWidth: .infinity,
-                        alignment: .leading
-                    )
-                    .padding(4)
-                    .background(
-                        Color(UIColor.systemGroupedBackground)
-                    )
-                    DiffContentView(
-                        entries: expandDiffLines(diff),
-                        comments: comments,
-                        olderComments: olderComments,
-                        changeId: changeId,
-                        revisionId: revisionId,
-                        fileId: fileId
-                    )
+                        .padding(4)
+                        .background(
+                            Color(UIColor.systemGroupedBackground)
+                        )
+                        DiffContentView(
+                            entries: expandDiffLines(diff),
+                            comments: comments,
+                            olderComments: olderComments,
+                            changeId: changeId,
+                            revisionId: revisionId,
+                            fileId: activeFile
+                        )
+                    }
                 }
             }
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .primaryAction) {
+                Button {
+                    if let index = fileIndex, index > 0 {
+                        activeFileId = paths[index - 1]
+                    }
+                } label: {
+                    Image(systemName: "arrow.left")
+                }
+                .disabled(paths.count < 2 || fileIndex == nil || fileIndex == 0)
+
+                Button {
+                    if let index = fileIndex, index < paths.count - 1 {
+                        activeFileId = paths[index + 1]
+                    }
+                } label: {
+                    Image(systemName: "arrow.right")
+                }
+                .disabled(paths.count < 2 || fileIndex == nil || fileIndex == paths.count - 1)
+            }
+        }
+        .onChange(of: activeFileId) { _, _ in
+            gerritDiffModel = GerritFileDiffViewModel()
         }
     }
 }
