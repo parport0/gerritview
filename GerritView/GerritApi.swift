@@ -623,6 +623,19 @@ public struct CommentInfo: Codable, Identifiable, Equatable {
     public var endLine: Int? {
         return range?.endLine ?? line
     }
+
+    // The updated timestamp carries nanoseconds, which the JSON decoder's
+    // date formatter cannot parse, so it is kept as a string.
+    private static let updatedFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        formatter.timeZone = TimeZone(abbreviation: "UTC")
+        return formatter
+    }()
+
+    public var date: Date? {
+        return CommentInfo.updatedFormatter.date(from: String(updated.prefix(19)))
+    }
 }
 
 public struct DiffInfo: Codable {

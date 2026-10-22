@@ -591,6 +591,37 @@ struct CommitMessageLinkTests {
     }
 }
 
+struct CommentTimestampTests {
+    func comment(updated: String) -> CommentInfo {
+        return CommentInfo(
+            id: "c",
+            patchSet: 1,
+            path: nil,
+            side: nil,
+            parentNumber: nil,
+            line: 1,
+            range: nil,
+            inReplyTo: nil,
+            message: "msg",
+            updated: updated,
+            author: nil,
+            tag: nil,
+            unresolved: nil,
+            changeMessageId: nil
+        )
+    }
+
+    @Test func parsesGerritTimestamp() throws {
+        let date = try #require(comment(updated: "2024-05-14 12:34:56.000000000").date)
+        // 2024-05-14 12:34:56 UTC
+        #expect(date == Date(timeIntervalSince1970: 1_715_690_096))
+    }
+
+    @Test func invalidTimestampIsNil() {
+        #expect(comment(updated: "garbage").date == nil)
+    }
+}
+
 extension DiffEntry {
     var thread: CommentThread? {
         if case .comments(let t) = self {

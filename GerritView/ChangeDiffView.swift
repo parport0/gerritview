@@ -338,6 +338,12 @@ struct CommentThreadRow: View {
                         if !place(comment).isEmpty {
                             Text(place(comment)).font(.footnote).foregroundStyle(.secondary)
                         }
+                        if let date = comment.date {
+                            Text(date.formatted(date: .abbreviated, time: .shortened))
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
                     }
                     Text(verbatim: comment.message ?? "").font(.footnote)
                 }
