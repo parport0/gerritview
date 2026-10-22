@@ -527,6 +527,11 @@ struct ChangePageLoadedView: View {
                             .foregroundStyle(.orange)
                     }
                     Text("#" + String(change.number))
+                    HStack(spacing: 4) {
+                        UserpicView(account: change.owner, size: 16)
+                        Text(change.owner.Name())
+                    }
+                    .font(.subheadline)
                     Text("\(Image(systemName: "folder"))\(change.project)")
                     Text("\(Image(systemName: "arrow.trianglehead.branch"))\(change.branch)")
                     if (change.submitRequirements != nil) {
