@@ -281,7 +281,12 @@ struct CommentThreadRow: View {
                             Text("●").font(.footnote).foregroundStyle(.orange)
                         }
                         Text(comment.author?.Name() ?? "Unknown").font(.footnote)
-                        Text(place(comment)).font(.footnote).foregroundStyle(.secondary)
+                        if let patchSet = comment.patchSet {
+                            Text("PS\(patchSet)").font(.footnote).foregroundStyle(.secondary)
+                        }
+                        if !place(comment).isEmpty {
+                            Text(place(comment)).font(.footnote).foregroundStyle(.secondary)
+                        }
                     }
                     Text(verbatim: comment.message ?? "").font(.footnote)
                 }
