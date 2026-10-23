@@ -86,7 +86,15 @@ struct ContentView: View {
             //.hideScrollEdgeEffect()
             //.toolbarBackground(backgroundGradient)
             //.toolbarBackgroundVisibility(.visible, for: ToolbarPlacement)
-        }.environment(settings)
+        }
+        .environment(settings)
+        .environment(\.openURL, OpenURLAction { url in
+            if url.scheme == "gerritview" {
+                handleGerritURL(url)
+                return .handled
+            }
+            return .systemAction(url)
+        })
     }
 }
 

@@ -96,11 +96,7 @@ struct ChangeListView: View {
         ScrollViewReader { proxy in
             List {
                 ForEach($gerritChangesModel.changes) { $change in
-                    NavigationLink(
-                        destination: ChangePageView(
-                            changeId: change.tripletId
-                        )
-                    ) {
+                    NavigationLink(value: ChangeRoute(changeId: change.tripletId)) {
                         ChangeRowView(change: change)
                     }
                 }
