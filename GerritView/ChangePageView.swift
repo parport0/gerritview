@@ -406,7 +406,7 @@ struct CommentTextViewRepresentable: UIViewRepresentable {
                 with: match.range(at: 1)
             )
             var acct_name = acct_id
-            for account in message.accountsInMessage! {
+            for account in message.accountsInMessage ?? [] {
                 if account.accountId == Int(acct_id)! {
                     acct_name = account.Name()
                 }
